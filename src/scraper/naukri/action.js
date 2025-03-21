@@ -1,331 +1,292 @@
-import fs from 'fs'; // File system to store cookies
+import fs from 'fs';
 import dotenv from 'dotenv';
-import browserInstance from '../../browser/browser.js';
-import { getGeminiResponse } from '../../ai/gemini.js';
-const browser = await browserInstance.getBrowser();
+import { getGeminiResponse, getShortGeminiResponse } from '../../ai/gemini.js';
 
-dotenv.config(); // Load .env credentials
+dotenv.config();
 
-const COOKIE_PATH = './data/naukri_cookies.json'; // Path to store session
+const COOKIE_PATH = './data/naukri_cookies.json';
 
 export async function loginToNaukri(page) {
-  console.log('🔍 Checking for existing session...');
-
-  // **Load Cookies if Available**
   if (fs.existsSync(COOKIE_PATH)) {
     const cookies = JSON.parse(fs.readFileSync(COOKIE_PATH, 'utf8'));
     await page.setCookie(...cookies);
-    console.log('✅ Loaded saved session cookies!');
-
-    // **Verify session by checking if we are still logged in**
     await page.goto('https://www.naukri.com/', { waitUntil: 'networkidle2' });
 
-    // if you see this url https://www.naukri.com/mnjuser/homepage that means you are logged in
-    const loggedIn = page.url().includes('mnjuser/homepage');
-
-    if (loggedIn) {
-      console.log('🎉 Already logged in! Skipping login...');
+    if (page.url().includes('mnjuser/homepage')) {
+      console.log('🎉 Already logged in!');
       return;
-    } else {
-      console.log('⚠️ Session expired. Logging in again...');
-      fs.unlinkSync(COOKIE_PATH); // Delete old cookies
     }
+
+    console.log('⚠️ Session expired. Logging in again...');
+    fs.unlinkSync(COOKIE_PATH);
   }
 
-  console.log('🔍 Navigating to Naukri login...');
   await page.goto('https://www.naukri.com/', { waitUntil: 'networkidle2' });
-
-  // Wait for login button
-  await page.waitForSelector("a[title='Jobseeker Login']", { visible: true });
-
-  // Click login button
   await page.click("a[title='Jobseeker Login']");
-  console.log('✅ Clicked on Login button');
+  await page.waitForSelector("input[type='text']");
 
-  // Wait for login form
-  await page.waitForSelector("input[type='text']", { visible: true });
-
-  // **Type credentials with human-like delay**
-  await page.type("input[type='text']", process.env.NAUKRI_EMAIL, {
-    delay: Math.random() * 200 + 100,
-  });
-  await page.type("input[type='password']", process.env.NAUKRI_PASSWORD, {
-    delay: Math.random() * 200 + 100,
-  });
-
-  // Click login
+  await page.type("input[type='text']", process.env.NAUKRI_EMAIL, { delay: 150 });
+  await page.type("input[type='password']", process.env.NAUKRI_PASSWORD, { delay: 150 });
   await page.click("button[type='submit']");
-  console.log('✅ Submitted login credentials');
-
-  // Wait for navigation to dashboard
   await page.waitForNavigation({ waitUntil: 'networkidle2' });
 
-  console.log('🎉 Successfully logged in!');
-
-  // **Save session cookies**
   const cookies = await page.cookies();
   fs.writeFileSync(COOKIE_PATH, JSON.stringify(cookies));
-  console.log('✅ Session saved! Next time, you won’t need to log in.');
+  console.log('✅ Session cookies saved.');
 }
 
-export async function searchJobs(
-  page,
-  keyword = 'node js',
-  experience = '3',
-  location = 'Bangalore'
-) {
-  console.log(
-    `🔍 Searching for: ${keyword} jobs with ${experience} years experience in ${location}`
-  );
-
-  // **Ensure the search bar is visible**
+export async function searchJobs(page, keyword, experience, location) {
   await page.waitForSelector('.nI-gNb-sb__main', { visible: true });
 
-  // **Click and enter job title**
-  const keywordInput = await page.$(
-    "input.suggestor-input[placeholder='Enter keyword / designation / companies']"
-  );
+  const keywordInput = await page.$("input.suggestor-input[placeholder='Enter keyword / designation / companies']");
   if (keywordInput) {
     await keywordInput.click({ clickCount: 3 });
-    await page.keyboard.press('Backspace'); // Clear it
-    await page.type(
-      "input.suggestor-input[placeholder='Enter keyword / designation / companies']",
-      keyword,
-      { delay: 100 }
-    );
-    console.log('✅ Entered Job Title:', keyword);
-  } else {
-    console.log('❌ Job title input not found!');
+    await page.keyboard.press('Backspace');
+    await page.type("input.suggestor-input[placeholder='Enter keyword / designation / companies']", keyword, { delay: 100 });
   }
 
-  // **Click and select experience**
   const experienceInput = await page.$('input#experienceDD');
   if (experienceInput) {
     await experienceInput.click();
-    console.log('✅ Opened Experience Dropdown');
-
-    // Wait for dropdown options to appear
     await page.waitForSelector('.dropdownContainer .dropdownPrimary', { visible: true });
-
-    // Select the experience value dynamically
-    const experienceOptions = await page.$$('.dropdownPrimary li'); // Get all experience options
-    if (experienceOptions.length > 0) {
-      for (const option of experienceOptions) {
-        const text = await page.evaluate((el) => el.innerText.trim(), option);
-        if (text === `${experience} years`) {
-          await option.click();
-          console.log(`✅ Selected Experience: ${experience} Years`);
-          break;
-        }
+    const experienceOptions = await page.$$('.dropdownPrimary li');
+    for (const option of experienceOptions) {
+      const text = await page.evaluate(el => el.innerText.trim(), option);
+      if (text === `${experience} years`) {
+        await option.click();
+        break;
       }
-    } else {
-      console.log('❌ Experience option not found!');
     }
-  } else {
-    console.log('❌ Experience input not found!');
   }
 
-  // **Click and enter location**
   const locationInput = await page.$("input.suggestor-input[placeholder='Enter location']");
   if (locationInput) {
     await locationInput.click({ clickCount: 3 });
-    await page.keyboard.press('Backspace'); // Clear it
-    await page.type("input.suggestor-input[placeholder='Enter location']", location, {
-      delay: Math.random() * 200 + 100,
-    });
-    console.log('✅ Entered Location:', location);
-  } else {
-    console.log('❌ Location input not found!');
+    await page.keyboard.press('Backspace');
+    await page.type("input.suggestor-input[placeholder='Enter location']", location, { delay: 100 });
   }
 
-  // **Click the search button**
   const searchButton = await page.$('button.nI-gNb-sb__icon-wrapper');
   if (searchButton) {
     await searchButton.click();
-    console.log('🚀 Clicked Search Button');
-  } else {
-    console.log('❌ Search button not found!');
   }
 
-  await new Promise((resolve) => setTimeout(resolve, 2000)); // Delay to prevent issues
-  // **Step: Click "Sort By" Dropdown**
+  await new Promise(resolve => setTimeout(resolve, 3000));
   const sortByButton = await page.$('button#filter-sort');
   if (sortByButton) {
     await sortByButton.click();
-    console.log('📌 Opened Sort By Dropdown');
-
-    // **Wait for the dropdown to appear**
     await page.waitForSelector("ul[data-filter-id='sort']", { visible: true });
-    await new Promise((resolve) => setTimeout(resolve, 2000)); // Delay to prevent issues
-
-    // **Select "Date" Option**
-    const dateOption = await page.$("li[title='Date'] a[data-id='filter-sort-f']");
+    await new Promise(resolve => setTimeout(resolve, 3000)); const dateOption = await page.$("li[title='Date'] a[data-id='filter-sort-f']");
     if (dateOption) {
       await dateOption.click();
-      console.log('✅ Sorted jobs by Date');
-    } else {
-      console.log("❌ 'Date' sort option not found!");
     }
-  } else {
-    console.log('❌ Sort By dropdown not found!');
   }
 }
 
-export async function applyForJobs(page) {
-  // Wait for job listings to load
-  await page.waitForSelector('.srp-jobtuple-wrapper');
+function filterJobs(jobs, prefs) {
+  return jobs.filter(job => {
+    const locationMatch = job.location.toLowerCase().includes(prefs.location.toLowerCase());
 
-  // Extract job titles and links
-  const jobs = await page.evaluate(() => {
-    return Array.from(document.querySelectorAll('.srp-jobtuple-wrapper'))
-      .map((job) => {
-        const titleElement = job.querySelector('h2 a');
-        const applyLink = titleElement ? titleElement.href : null;
-        return { title: titleElement?.innerText, applyLink };
-      })
-      .filter((job) => job.applyLink); // Filter out null values
+    const expMatch = (() => {
+      const match = job.experience.match(/(\d+)-?(\d+)?/);
+      if (!match) return false;
+      const min = parseInt(match[1], 10);
+      const max = match[2] ? parseInt(match[2], 10) : min;
+      return prefs.minExp >= min && prefs.maxExp <= max;
+    })();
+
+    const skills = job.skills.map(s => s.toLowerCase());
+    const skillMatch = prefs.requiredSkills.every(skill =>
+      skills.some(s => s.includes(skill.toLowerCase()))
+    );
+
+    const ratingMatch = (() => {
+      const rating = parseFloat(job.rating);
+      return !isNaN(rating) && rating >= prefs.minRating;
+    })();
+
+    return skillMatch && ratingMatch;
   });
+}
 
-  console.log(`Found ${jobs.length} jobs`);
+export async function scrapePaginatedJobs(page, baseUrl, preferences) {
+  let allJobs = [];
+  let pageNum = 1;
 
-  // Loop through jobs and apply
-  for (let job of jobs) {
-    console.log(`Applying to: ${job.title}`);
+  while (true) {
+    console.log(`📄 Scraping Page ${pageNum}`);
+    await page.waitForSelector('.cust-job-tuple', { timeout: 5000 });
+
+    const jobs = await page.evaluate(() => {
+      return Array.from(document.querySelectorAll('.cust-job-tuple')).map(job => {
+        const titleEl = job.querySelector('h2 > a.title');
+        const companyEl = job.querySelector('a.comp-name');
+        const ratingEl = job.querySelector('a.rating .main-2');
+        const reviewsEl = job.querySelector('a.review');
+        const expEl = job.querySelector('.exp span[title]');
+        const salEl = job.querySelector('.sal span[title]');
+        const locEl = job.querySelector('.loc span[title]');
+        const descEl = job.querySelector('.job-desc');
+        const skillEls = job.querySelectorAll('ul.tags-gt li');
+        const postedOnEl = job.querySelector('.job-post-day');
+
+        return {
+          title: titleEl?.innerText.trim() || "",
+          applyLink: titleEl?.href || "",
+          company: companyEl?.innerText.trim() || "",
+          rating: ratingEl?.innerText.trim() || "",
+          reviews: reviewsEl?.innerText.trim() || "",
+          experience: expEl?.title?.trim() || "",
+          salary: salEl?.title?.trim() || "",
+          location: locEl?.title?.trim() || "",
+          description: descEl?.innerText.trim() || "",
+          skills: Array.from(skillEls).map(li => li.innerText.trim()),
+          postedOn: postedOnEl?.innerText.trim() || ""
+        };
+      });
+    });
+
+    allJobs.push(...jobs);
+
+    const hasNext = await page.evaluate(() => {
+      const anchors = Array.from(document.querySelectorAll('a.styles_btn-secondary__2AsIP'));
+      const next = anchors.find(a => a.innerText.trim() === 'Next' && !a.hasAttribute('disabled'));
+      if (next) {
+        next.click();
+        return true;
+      }
+      return false;
+    });
+
+    if (!hasNext || pageNum >= 10) {
+      console.log('🚫 No more pages.');
+      break;
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 3000)); // allow DOM to update
+    pageNum++;
+  }
+
+  console.log(`✅ Scraped total ${allJobs.length} jobs`);
+  return filterJobs(allJobs, preferences);
+}
+
+export async function applyForJobs(browser, jobs) {
+  for (const job of jobs) {
+    console.log(`\n💼 Applying to: ${job.title} | ${job.company}`);
     const jobPage = await browser.newPage();
     await jobPage.goto(job.applyLink, { waitUntil: 'networkidle2' });
 
-    // Click Apply button
     try {
       await jobPage.waitForSelector('.apply-button', { timeout: 5000 });
       await jobPage.click('.apply-button');
-      console.log(`Clicked apply button for: ${job.title}`);
+      await new Promise(resolve => setTimeout(resolve, 3000));
 
-      // Wait to see what shows up
-      await new Promise((resolve) => setTimeout(resolve, 5000)); // Delay to prevent issues
-
-      // 1. Handle Chat Drawer if present
-      const chatDrawerExists = await jobPage.$('.chatbot_DrawerContentWrapper');
-      if (chatDrawerExists) {
-        console.log('Chatbot drawer detected');
+      const chatDrawer = await jobPage.$('.chatbot_DrawerContentWrapper');
+      if (chatDrawer) {
+        console.log("💬 Chatbot detected");
         await handleChatForm(jobPage);
       } else {
-        // 2. Check for Success Message
-        const successMessage = await jobPage.evaluate(() => {
-          const el = Array.from(document.querySelectorAll('body *')).find((e) =>
-            e.innerText?.includes('You have successfully applied to')
+        const success = await jobPage.evaluate(() => {
+          const msg = Array.from(document.querySelectorAll('body *')).find(el =>
+            el.innerText?.includes('You have successfully applied to')
           );
-          return el ? el.innerText : null;
+          return msg?.innerText;
         });
-
-        if (successMessage) {
-          console.log(`✅ ${successMessage}`);
-        } else {
-          console.log('❓ No chatbot and no success message — something unusual');
-        }
+        if (success) console.log(`✅ ${success}`);
+        else console.log("🤷 Unknown apply result");
       }
 
-      console.log(`Applied successfully to: ${job.title}`);
-    } catch (error) {
-      console.log(`Apply button not found for: ${job.title}`);
+    } catch (err) {
+      console.log(`❌ Couldn't apply: ${err.message}`);
     }
 
     await jobPage.close();
   }
 }
 
-async function handleChatForm(jobPage) {
+async function handleChatForm(page) {
   try {
-    await jobPage.waitForSelector('.chatbot_DrawerContentWrapper', { timeout: 3000 });
-    console.log("Chatbot drawer detected");
+    await page.waitForSelector('.chatbot_DrawerContentWrapper', { timeout: 3000 });
 
     let attempt = 0;
-    const maxAttempts = 10;
+    const max = 10;
 
-    while (await jobPage.$('.chatbot_DrawerContentWrapper') !== null && attempt < maxAttempts) {
-      const question = await jobPage.evaluate(() => {
-        const allItems = Array.from(document.querySelectorAll('.chatbot_MessageContainer .chatbot_ListItem'));
-        const last = allItems[allItems.length - 1];
+    while (await page.$('.chatbot_DrawerContentWrapper') !== null && attempt < max) {
+      const question = await page.evaluate(() => {
+        const items = Array.from(document.querySelectorAll('.chatbot_ListItem'));
+        const last = items[items.length - 1];
         const span = last?.querySelector('.botMsg span');
         return span?.innerText.trim();
       });
 
-      if (!question) {
-        console.log("No question detected. Ending chat handler.");
-        break;
-      }
+      if (!question) break;
+      console.log(`🤖 Bot asks: ${question}`);
 
-      console.log(`Bot asks: ${question}`);
-      const answer = await getGeminiResponse(question);
+      const radioBtns = await page.$$('.ssrc__radio-btn-container');
+      if (radioBtns.length > 0) {
+        const optionLabels = [];
 
-      if (answer === "Skip") {
-        const skipChip = await jobPage.$('.chatbot_Chip span');
-        if (skipChip) {
-          await skipChip.click();
-          console.log("Clicked Skip");
-        } else {
-          console.log("Skip button not found");
+        for (const btn of radioBtns) {
+          const label = await btn.$('label');
+          const labelText = await page.evaluate(el => el.innerText.trim(), label);
+          optionLabels.push(labelText);
+        }
+
+        const answer = await getShortGeminiResponse(question, optionLabels);
+        console.log(`🎯 Gemini chose: ${answer}`);
+
+        let clicked = false;
+        for (let i = 0; i < optionLabels.length; i++) {
+          if (optionLabels[i].toLowerCase() === answer.toLowerCase()) {
+            const label = await radioBtns[i].$('label');
+            if (label) {
+              await label.click();
+              clicked = true;
+              console.log(`✅ Clicked radio: ${optionLabels[i]}`);
+              break;
+            }
+          }
+        }
+
+        if (!clicked) {
+          console.log(`❌ No match found. Selecting first option.`);
+          const firstLabel = await radioBtns[0].$('label');
+          if (firstLabel) await firstLabel.click();
+        }
+
+        // ✅ Save after selection (if button exists)
+        const saveBtn = await page.$('.sendMsg');
+        if (saveBtn) {
+          await saveBtn.click();
+          console.log('📩 Clicked Save after selecting radio');
+        }
+      } else if (await page.$('input[type="checkbox"]')) {
+        const checkbox = await page.$('input[type="checkbox"]');
+        if (checkbox) {
+          await checkbox.click();
+          console.log('✅ Checkbox selected');
         }
       } else {
-        // Check for radio buttons
-        const radioButtons = await jobPage.$$('.ssrc__radio-btn-container');
-        if (radioButtons.length > 0) {
-          console.log("Detected radio button input");
+        const answer = await getGeminiResponse(question);
+        console.log(`💬 Gemini (text): ${answer}`);
 
-          // Find the correct answer in the labels
-          const optionSelector = `//label[contains(text(), '${answer}')]`;
-          const option = await jobPage.$x(optionSelector);
-          
-          if (option.length > 0) {
-              await option[0].click();
-              console.log(`Selected: ${answer}`);
-          } else {
-              console.log(`Option '${answer}' not found, choosing default first option.`);
-              await radioButtons[0].click();
+        await page.evaluate((val) => {
+          const input = document.querySelector('div[contenteditable="true"]');
+          if (input) {
+            input.innerText = val;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
           }
-        } 
-        // Check for checkboxes
-        else if (await jobPage.$('input[type="checkbox"]')) {
-          console.log("Detected checkbox input");
-
-          const checkbox = await jobPage.$('input[type="checkbox"]');
-          if (checkbox) {
-            await checkbox.click();
-            console.log("Checkbox ticked");
-          }
-        } 
-        // Normal text input
-        else {
-          await jobPage.evaluate((answerText) => {
-            const inputDiv = document.querySelector('div[contenteditable="true"]');
-            if (inputDiv) {
-              inputDiv.innerText = answerText;
-              const event = new Event('input', { bubbles: true });
-              inputDiv.dispatchEvent(event);
-            }
-          }, answer);
-
-          await jobPage.keyboard.press('Enter');
-          console.log(`Answered: ${answer}`);
-        }
-      }
-
-      // Click "Save" if visible
-      const saveButton = await jobPage.$('.sendMsgbtn_container .sendMsg');
-      if (saveButton) {
-        await saveButton.click();
-        console.log("Clicked Save button");
+        }, answer);
+        await page.keyboard.press('Enter');
       }
 
       attempt++;
-      await new Promise((resolve) => setTimeout(resolve, 5000)); // Delay to prevent issues
+      await new Promise(resolve => setTimeout(resolve, 3000));
     }
 
-    console.log("Finished chatbot interaction or drawer closed");
-  } catch (err) {
-    console.log("No chatbot form or failed to handle it:", err.message);
+    console.log("✅ Chatbot finished");
+  } catch (e) {
+    console.log("⚠️ Chatbot handling failed:", e.message);
   }
 }
-
-
-
-

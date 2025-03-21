@@ -1,9 +1,14 @@
 import browserInstance from '../../browser/browser.js';
 import dotenv from 'dotenv';
-import {loginToNaukri, applyForJobs, searchJobs } from './action.js';
-const browser = await browserInstance.getBrowser();
+import {
+  loginToNaukri,
+  applyForJobs,
+  searchJobs,
+  scrapePaginatedJobs
+} from './action.js';
 
-dotenv.config(); // Load environment variables
+const browser = await browserInstance.getBrowser();
+dotenv.config();
 
 export async function startNaukriAutomation() {
   const page = await browser.newPage();
@@ -14,11 +19,22 @@ export async function startNaukriAutomation() {
   );
 
   await loginToNaukri(page);
-  await searchJobs(page);
-  await applyForJobs(page);
+  await searchJobs(page, 'node js', '3', 'Pune'); // or pass from CLI/env
 
-  // Close the browser session after applying
+  const currentUrl = page.url();
+
+  const userPrefs = {
+    location: 'Pune',
+    minExp: 2,
+    maxExp: 4,
+    requiredSkills: ['Node.js', 'React'],
+    minRating: 3.5
+  };
+
+  const jobs = await scrapePaginatedJobs(page, currentUrl, userPrefs);
+  await applyForJobs(browser, jobs);
+
   await browserInstance.closeBrowser();
 }
 
-startNaukriAutomation()
+startNaukriAutomation();

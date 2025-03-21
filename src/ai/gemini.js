@@ -33,3 +33,19 @@ export async function getGeminiResponse(question) {
     return 'Skip';
   }
 }
+
+export async function getShortGeminiResponse(question, options = []) {
+  const prompt = options.length
+    ? `Choose only one from the following options:\nOptions: ${options.join(', ')}\nQuestion: ${question}`
+    : question;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const raw = result.response.text().trim();
+    const answer = raw.split(/[.,\n]/)[0].trim(); // Clean the first word/phrase
+    return answer;
+  } catch (error) {
+    console.log('Gemini (short answer) error:', error.message);
+    return 'Skip';
+  }
+}
