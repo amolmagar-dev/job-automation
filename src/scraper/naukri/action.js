@@ -1,6 +1,7 @@
 import fs from 'fs'; // File system to store cookies
 import dotenv from 'dotenv';
 import browserInstance from '../../browser/browser.js';
+import { getGeminiResponse } from '../../ai/gemini.js';
 const browser = await browserInstance.getBrowser();
 
 dotenv.config(); // Load .env credentials
@@ -18,7 +19,9 @@ export async function loginToNaukri(page) {
 
     // **Verify session by checking if we are still logged in**
     await page.goto('https://www.naukri.com/', { waitUntil: 'networkidle2' });
-    const loggedIn = await page.evaluate(() => !!document.querySelector("a[title='Logout']"));
+
+    // if you see this url https://www.naukri.com/mnjuser/homepage that means you are logged in
+    const loggedIn = page.url().includes('mnjuser/homepage');
 
     if (loggedIn) {
       console.log('🎉 Already logged in! Skipping login...');
@@ -67,7 +70,7 @@ export async function loginToNaukri(page) {
 
 export async function searchJobs(
   page,
-  keyword = 'React js',
+  keyword = 'node js',
   experience = '3',
   location = 'Bangalore'
 ) {
@@ -153,6 +156,7 @@ export async function searchJobs(
 
     // **Wait for the dropdown to appear**
     await page.waitForSelector("ul[data-filter-id='sort']", { visible: true });
+    await new Promise((resolve) => setTimeout(resolve, 2000)); // Delay to prevent issues
 
     // **Select "Date" Option**
     const dateOption = await page.$("li[title='Date'] a[data-id='filter-sort-f']");
@@ -194,6 +198,32 @@ export async function applyForJobs(page) {
     try {
       await jobPage.waitForSelector('.apply-button', { timeout: 5000 });
       await jobPage.click('.apply-button');
+      console.log(`Clicked apply button for: ${job.title}`);
+
+      // Wait to see what shows up
+      await new Promise((resolve) => setTimeout(resolve, 5000)); // Delay to prevent issues
+
+      // 1. Handle Chat Drawer if present
+      const chatDrawerExists = await jobPage.$('.chatbot_DrawerContentWrapper');
+      if (chatDrawerExists) {
+        console.log('Chatbot drawer detected');
+        await handleChatForm(jobPage);
+      } else {
+        // 2. Check for Success Message
+        const successMessage = await jobPage.evaluate(() => {
+          const el = Array.from(document.querySelectorAll('body *')).find((e) =>
+            e.innerText?.includes('You have successfully applied to')
+          );
+          return el ? el.innerText : null;
+        });
+
+        if (successMessage) {
+          console.log(`✅ ${successMessage}`);
+        } else {
+          console.log('❓ No chatbot and no success message — something unusual');
+        }
+      }
+
       console.log(`Applied successfully to: ${job.title}`);
     } catch (error) {
       console.log(`Apply button not found for: ${job.title}`);
@@ -202,3 +232,100 @@ export async function applyForJobs(page) {
     await jobPage.close();
   }
 }
+
+async function handleChatForm(jobPage) {
+  try {
+    await jobPage.waitForSelector('.chatbot_DrawerContentWrapper', { timeout: 3000 });
+    console.log("Chatbot drawer detected");
+
+    let attempt = 0;
+    const maxAttempts = 10;
+
+    while (await jobPage.$('.chatbot_DrawerContentWrapper') !== null && attempt < maxAttempts) {
+      const question = await jobPage.evaluate(() => {
+        const allItems = Array.from(document.querySelectorAll('.chatbot_MessageContainer .chatbot_ListItem'));
+        const last = allItems[allItems.length - 1];
+        const span = last?.querySelector('.botMsg span');
+        return span?.innerText.trim();
+      });
+
+      if (!question) {
+        console.log("No question detected. Ending chat handler.");
+        break;
+      }
+
+      console.log(`Bot asks: ${question}`);
+      const answer = await getGeminiResponse(question);
+
+      if (answer === "Skip") {
+        const skipChip = await jobPage.$('.chatbot_Chip span');
+        if (skipChip) {
+          await skipChip.click();
+          console.log("Clicked Skip");
+        } else {
+          console.log("Skip button not found");
+        }
+      } else {
+        // Check for radio buttons
+        const radioButtons = await jobPage.$$('.ssrc__radio-btn-container');
+        if (radioButtons.length > 0) {
+          console.log("Detected radio button input");
+
+          // Find the correct answer in the labels
+          const optionSelector = `//label[contains(text(), '${answer}')]`;
+          const option = await jobPage.$x(optionSelector);
+          
+          if (option.length > 0) {
+              await option[0].click();
+              console.log(`Selected: ${answer}`);
+          } else {
+              console.log(`Option '${answer}' not found, choosing default first option.`);
+              await radioButtons[0].click();
+          }
+        } 
+        // Check for checkboxes
+        else if (await jobPage.$('input[type="checkbox"]')) {
+          console.log("Detected checkbox input");
+
+          const checkbox = await jobPage.$('input[type="checkbox"]');
+          if (checkbox) {
+            await checkbox.click();
+            console.log("Checkbox ticked");
+          }
+        } 
+        // Normal text input
+        else {
+          await jobPage.evaluate((answerText) => {
+            const inputDiv = document.querySelector('div[contenteditable="true"]');
+            if (inputDiv) {
+              inputDiv.innerText = answerText;
+              const event = new Event('input', { bubbles: true });
+              inputDiv.dispatchEvent(event);
+            }
+          }, answer);
+
+          await jobPage.keyboard.press('Enter');
+          console.log(`Answered: ${answer}`);
+        }
+      }
+
+      // Click "Save" if visible
+      const saveButton = await jobPage.$('.sendMsgbtn_container .sendMsg');
+      if (saveButton) {
+        await saveButton.click();
+        console.log("Clicked Save button");
+      }
+
+      attempt++;
+      await new Promise((resolve) => setTimeout(resolve, 5000)); // Delay to prevent issues
+    }
+
+    console.log("Finished chatbot interaction or drawer closed");
+  } catch (err) {
+    console.log("No chatbot form or failed to handle it:", err.message);
+  }
+}
+
+
+
+
