@@ -2,5 +2,5 @@
   "watch": ["src"],
   "ignore": ["data/naukri_cookies.json"],
   "ext": "js,json",
-  "exec": "node src/index.js"
+  "exec": "node src/scraper/naukri/index.js"
 }

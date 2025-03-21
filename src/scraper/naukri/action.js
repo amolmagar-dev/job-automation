@@ -1,5 +1,6 @@
 import fs from 'fs'; // File system to store cookies
 import dotenv from 'dotenv';
+import browserInstance from '../../browser/browser.js';
 const browser = await browserInstance.getBrowser();
 
 dotenv.config(); // Load .env credentials

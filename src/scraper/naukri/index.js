@@ -1,6 +1,6 @@
 import browserInstance from '../../browser/browser.js';
 import dotenv from 'dotenv';
-import loginToNaukri, { applyForJobs, searchJobs } from './action.js';
+import {loginToNaukri, applyForJobs, searchJobs } from './action.js';
 const browser = await browserInstance.getBrowser();
 
 dotenv.config(); // Load environment variables
