@@ -2,11 +2,13 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import fs from 'fs';
 import path from 'path';
 
+console.log('🚀 Initializing Job Assistant Bot Setup...');
+
 const genAI = new GoogleGenerativeAI('AIzaSyBXdbQx6Oobr4UMvy1YALkkdGS1uGTm9fs');
 
-// 🔍 Auto-detect PDF from user-data folder
+// 🔍 Step 1: Locate resume PDF in user-data folder
 const userDataDir = path.resolve('user-data');
-const pdfFiles = fs.readdirSync(userDataDir).filter(file => file.toLowerCase().endsWith('.pdf'));
+const pdfFiles = fs.readdirSync(userDataDir).filter((file) => file.toLowerCase().endsWith('.pdf'));
 
 if (pdfFiles.length === 0) {
   console.error('❌ No PDF resume found in user-data folder.');
@@ -14,11 +16,12 @@ if (pdfFiles.length === 0) {
 }
 
 const resumePath = path.join(userDataDir, pdfFiles[0]);
-console.log(`📄 Auto-detected resume: ${resumePath}`);
+console.log(`📄 Found resume: ${resumePath}`);
 
+// 🧠 Step 2: Load model for analyzing resume
 const modelForInstruction = genAI.getGenerativeModel({ model: 'models/gemini-1.5-flash' });
 
-console.log('🧠 Analizing user from resume...');
+console.log('🤖 Bot is reading your resume and generating context...');
 const instructionResult = await modelForInstruction.generateContent([
   {
     inlineData: {
@@ -27,11 +30,11 @@ const instructionResult = await modelForInstruction.generateContent([
     },
   },
   `
-  Based on this resume, generate a systemInstruction string for a Gemini AI job assistant.
+  Based on this resume, generate a systemInstruction string for a job assistant bot.
   Include name, role, experience, skills, education, companies, projects, location preference, and salary expectation.
   End with: "Always answer in short, crisp, one-line responses like a real applicant."
   Output only the instruction text.
-  `
+  `,
 ]);
 
 const systemInstruction = instructionResult.response.text().trim();
@@ -41,14 +44,14 @@ if (!systemInstruction) {
   process.exit(1);
 }
 
-console.log('✅ System instruction extracted from:', path.basename(resumePath));
-console.log('🧾 ---------- Gemini System Instruction Preview ----------');
+console.log('✅ Bot training completed from:', path.basename(resumePath));
+console.log('🧾 ---------- System Instruction for Bot ----------\n');
 console.log(systemInstruction);
-console.log('--------------------------------------------------------\n');
+console.log('\n🧾 -----------------------------------------------\n');
 
 const model = genAI.getGenerativeModel({
   model: 'gemini-2.0-flash',
-  systemInstruction
+  systemInstruction,
 });
 
 export async function getGeminiResponse(question) {
@@ -56,7 +59,7 @@ export async function getGeminiResponse(question) {
     const result = await model.generateContent(question);
     return result.response.text().trim();
   } catch (error) {
-    console.log('Gemini error:', error.message);
+    console.log('Bot error:', error.message);
     return 'Skip';
   }
 }
@@ -72,7 +75,7 @@ export async function getShortGeminiResponse(question, options = []) {
     const answer = raw.split(/[.,\n]/)[0].trim();
     return answer;
   } catch (error) {
-    console.log('Gemini (short answer) error:', error.message);
+    console.log('Bot (short answer) error:', error.message);
     return 'Skip';
   }
 }
