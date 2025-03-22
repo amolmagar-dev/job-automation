@@ -1,33 +1,60 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import fs from 'fs';
+import path from 'path';
 
 const genAI = new GoogleGenerativeAI('AIzaSyBXdbQx6Oobr4UMvy1YALkkdGS1uGTm9fs');
 
+// 🔍 Auto-detect PDF from user-data folder
+const userDataDir = path.resolve('user-data');
+const pdfFiles = fs.readdirSync(userDataDir).filter(file => file.toLowerCase().endsWith('.pdf'));
+
+if (pdfFiles.length === 0) {
+  console.error('❌ No PDF resume found in user-data folder.');
+  process.exit(1);
+}
+
+const resumePath = path.join(userDataDir, pdfFiles[0]);
+console.log(`📄 Auto-detected resume: ${resumePath}`);
+
+const modelForInstruction = genAI.getGenerativeModel({ model: 'models/gemini-1.5-flash' });
+
+console.log('🧠 Analizing user from resume...');
+const instructionResult = await modelForInstruction.generateContent([
+  {
+    inlineData: {
+      data: Buffer.from(fs.readFileSync(resumePath)).toString('base64'),
+      mimeType: 'application/pdf',
+    },
+  },
+  `
+  Based on this resume, generate a systemInstruction string for a Gemini AI job assistant.
+  Include name, role, experience, skills, education, companies, projects, location preference, and salary expectation.
+  End with: "Always answer in short, crisp, one-line responses like a real applicant."
+  Output only the instruction text.
+  `
+]);
+
+const systemInstruction = instructionResult.response.text().trim();
+
+if (!systemInstruction) {
+  console.error('❌ Failed to extract system instruction from resume.');
+  process.exit(1);
+}
+
+console.log('✅ System instruction extracted from:', path.basename(resumePath));
+console.log('🧾 ---------- Gemini System Instruction Preview ----------');
+console.log(systemInstruction);
+console.log('--------------------------------------------------------\n');
+
 const model = genAI.getGenerativeModel({
   model: 'gemini-2.0-flash',
-  systemInstruction: `
-    You are an AI job assistant for Amol Magar.
-    Amol is a Full-Stack Engineer with 2+ years of experience.
-    He specializes in React, Node.js, PostgreSQL, MongoDB, Redux Toolkit, Docker, CI/CD, Redis, RabbitMQ, Grafana, Prometheus, Git, Express.js, and Material UI.
-    He studied MCA at Chandigarh University (2023-2025) and BCA at BAMU University (2018-2021).
-    He has worked at Smart Ship Hub Digital India Pvt Ltd and Digilearning Tech Private Limited.
-    His salary expectation is 6-8 LPA.
-    He prefers jobs in Pune, India.
-    His key projects include:
-      - Vessel voyage management platform (reduced manual work by 40%)
-      - Online vessel audit platform (eliminated paper-based processes)
-      - Document Management System (DMS) for syncing reports
-      - CII monitoring & Advanced Pattern Recognition for vessel emissions.
-    Answer job-related questions professionally based on this information.
-
-    Always answer in **short, crisp, one-line responses** like a real applicant.
-    Avoid elaboration unless explicitly asked.
-  `,
+  systemInstruction
 });
 
 export async function getGeminiResponse(question) {
   try {
     const result = await model.generateContent(question);
-    return result.response.text();
+    return result.response.text().trim();
   } catch (error) {
     console.log('Gemini error:', error.message);
     return 'Skip';
@@ -42,7 +69,7 @@ export async function getShortGeminiResponse(question, options = []) {
   try {
     const result = await model.generateContent(prompt);
     const raw = result.response.text().trim();
-    const answer = raw.split(/[.,\n]/)[0].trim(); // Clean the first word/phrase
+    const answer = raw.split(/[.,\n]/)[0].trim();
     return answer;
   } catch (error) {
     console.log('Gemini (short answer) error:', error.message);
