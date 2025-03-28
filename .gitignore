@@ -5,3 +5,6 @@ data/
 
 # whatapps ingores files
 .wwebjs*
+
+# user personal data 
+user-data*
