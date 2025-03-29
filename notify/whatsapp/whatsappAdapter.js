@@ -33,7 +33,9 @@ export async function initWhatsAppClient() {
 
 
 export async function sendWhatsAppMessage(message) {
-  if (!isReady || !client ||!process.env.NOTIFY_WHATSAPP_ENABLED) {
+  if (!isReady || !client) {
+    // need to handel it properly as of now just returning 
+    return
   }
 
   const chatId = `${process.env.NOTIFY_TO}@c.us`;

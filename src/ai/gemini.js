@@ -2,10 +2,13 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import fs from 'fs';
 import path from 'path';
 import { initWhatsAppClient } from '../../notify/whatsapp/whatsappAdapter.js';
+import dotenv from 'dotenv';
+dotenv.config();
+
 
 console.log('🚀 Initializing Job Assistant Bot Setup...');
 
-const genAI = new GoogleGenerativeAI('AIzaSyBXdbQx6Oobr4UMvy1YALkkdGS1uGTm9fs');
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 // 🔍 Step 1: Locate resume PDF in user-data folder
 const userDataDir = path.resolve('user-data');
@@ -15,7 +18,7 @@ if (pdfFiles.length === 0) {
   console.error('❌ No PDF resume found in user-data folder.');
   process.exit(1);
 }
-await initWhatsAppClient()
+if (JSON.parse(process.env.NOTIFY_WHATSAPP_ENABLED)) await initWhatsAppClient()
 
 const resumePath = path.join(userDataDir, pdfFiles[0]);
 console.log(`📄 Found resume: ${resumePath}`);
