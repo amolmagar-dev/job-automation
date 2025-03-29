@@ -7,34 +7,63 @@ import {
   scrapePaginatedJobs
 } from './action.js';
 
-const browser = await browserInstance.getBrowser();
 dotenv.config();
 
+const browser = await browserInstance.getBrowser();
+
+// Dynamic keyword list
+const searchConfigs = [
+  { keyword: 'automation', exp: '3', location: 'Pune' },
+];
+
 export async function startNaukriAutomation() {
-  const page = await browser.newPage();
+  let index = 0;
 
-  // Set a real user agent
-  await page.setUserAgent(
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-  );
+  while (true) {
+    try {
+      const page = await browser.newPage();
 
-  await loginToNaukri(page);
-  await searchJobs(page, 'node js', '3', 'Pune'); // or pass from CLI/env
+      await page.setUserAgent(
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      );
 
-  const currentUrl = page.url();
+      await loginToNaukri(page);
 
-  const userPrefs = {
-    location: 'Pune',
-    minExp: 2,
-    maxExp: 4,
-    requiredSkills: ['Node.js', 'React'],
-    minRating: 3.5
-  };
+      // Pick dynamic config
+      const { keyword, exp, location } = searchConfigs[index];
+      console.log(`🔍 Searching for: ${keyword} in ${location} (Exp: ${exp} yrs)`);
 
-  const jobs = await scrapePaginatedJobs(page, currentUrl, userPrefs);
-  await applyForJobs(browser, jobs);
+      await searchJobs(page, keyword, exp, location);
 
-  await browserInstance.closeBrowser();
+      const currentUrl = page.url();
+
+      const userPrefs = {
+        location,
+        minExp: Number(exp),
+        maxExp: Number(exp) + 2,
+        requiredSkills: [],
+        minRating: 3.5
+      };
+
+      const jobs = await scrapePaginatedJobs(page, currentUrl, userPrefs);
+      if (jobs.length === 0) {
+        console.log('No jobs found for the given criteria');
+      } else {
+        await applyForJobs(browser, jobs);
+      }
+
+      await page.close();
+
+      // Move to next config or loop back to start
+      index = (index + 1) % searchConfigs.length;
+
+      console.log('Waiting 5 minutes before next run...');
+      await new Promise(resolve => setTimeout(resolve, 1 * 60 * 1000));
+
+    } catch (err) {
+      console.error('Error during automation loop:', err);
+    }
+  }
 }
 
 startNaukriAutomation();

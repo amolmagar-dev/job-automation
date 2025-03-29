@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import fs from 'fs';
 import path from 'path';
+import { initWhatsAppClient } from '../../notify/whatsapp/whatsappAdapter.js';
 
 console.log('🚀 Initializing Job Assistant Bot Setup...');
 
@@ -14,6 +15,7 @@ if (pdfFiles.length === 0) {
   console.error('❌ No PDF resume found in user-data folder.');
   process.exit(1);
 }
+await initWhatsAppClient()
 
 const resumePath = path.join(userDataDir, pdfFiles[0]);
 console.log(`📄 Found resume: ${resumePath}`);
@@ -32,6 +34,7 @@ const instructionResult = await modelForInstruction.generateContent([
   `
   Based on this resume, generate a systemInstruction string for a job assistant bot.
   Include name, role, experience, skills, education, companies, projects, location preference, and salary expectation.
+  be always positive and professional.
   End with: "Always answer in short, crisp, one-line responses like a real applicant."
   Output only the instruction text.
   `,
@@ -79,3 +82,5 @@ export async function getShortGeminiResponse(question, options = []) {
     return 'Skip';
   }
 }
+
+// Dynamic keyword list from gemeni

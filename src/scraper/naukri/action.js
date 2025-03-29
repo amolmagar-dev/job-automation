@@ -1,6 +1,7 @@
 import fs from 'fs';
 import dotenv from 'dotenv';
 import { getGeminiResponse, getShortGeminiResponse } from '../../ai/gemini.js';
+import { sendWhatsAppMessage } from '../../../notify/whatsapp/whatsappAdapter.js';
 
 dotenv.config();
 
@@ -158,7 +159,7 @@ export async function scrapePaginatedJobs(page, baseUrl, preferences) {
       return false;
     });
 
-    if (!hasNext || pageNum >= 10) {
+    if (!hasNext || pageNum >= 1) {
       console.log('🚫 No more pages.');
       break;
     }
@@ -185,15 +186,29 @@ export async function applyForJobs(browser, jobs) {
       const chatDrawer = await jobPage.$('.chatbot_DrawerContentWrapper');
       if (chatDrawer) {
         console.log("💬 Chatbot detected");
-        await handleChatForm(jobPage);
+        let appliedJobPage = await handleChatForm(jobPage);
+        const success = await appliedJobPage.evaluate(() => {
+          const msg = Array.from(document.querySelectorAll('body *')).find(el =>
+            el.innerText?.includes('You have successfully applied to')
+          );
+          return msg?.innerText;
+        });
+        if (success) {
+          sendWhatsAppMessage(getWhatsappJobNotification(job));
+          console.log(`✅ ${success}`);
+        }
       } else {
+        await new Promise(resolve => setTimeout(resolve, 3000));
         const success = await jobPage.evaluate(() => {
           const msg = Array.from(document.querySelectorAll('body *')).find(el =>
             el.innerText?.includes('You have successfully applied to')
           );
           return msg?.innerText;
         });
-        if (success) console.log(`✅ ${success}`);
+        if (success) {
+          sendWhatsAppMessage(getWhatsappJobNotification(job));
+          console.log(`✅ ${success}`);
+        }
         else console.log("🤷 Unknown apply result");
       }
 
@@ -284,9 +299,30 @@ async function handleChatForm(page) {
       attempt++;
       await new Promise(resolve => setTimeout(resolve, 3000));
     }
-
     console.log("✅ Chatbot finished");
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    return page
   } catch (e) {
     console.log("⚠️ Chatbot handling failed:", e.message);
   }
+}
+
+function getWhatsappJobNotification(job) {
+  return `📢 *Job Applied Successfully!*
+
+🔹 *Position:* ${job.title}
+🏢 *Company:* ${job.company}
+📍 *Location:* ${job.location || 'N/A'}
+🧠 *Experience:* ${job.experience || 'N/A'}
+💰 *Salary:* ${job.salary || 'N/A'}
+⭐ *Rating:* ${job.rating || 'N/A'} (${job.reviews || 'No'} reviews)
+📅 *Posted On:* ${job.postedOn || 'N/A'}
+
+📝 *Description:* ${job.description || 'No description available'}
+
+🛠️ *Skills:* ${job.skills && job.skills.length ? job.skills.join(', ') : 'N/A'}
+
+🔗 *Apply Link:* ${job.applyLink || 'N/A'}
+
+🟢 Please wait while we track the application status.`;
 }
