@@ -22,6 +22,12 @@ export class GeminiBot {
     return instance;
   }
 
+  static async refreshInstruction() {
+    const newInstruction = await regenerateSystemInstruction(); // Force re-read from resume
+    instance = new GeminiBot(newInstruction); // Replace instance
+    console.log('🔁 System instruction updated and bot instance refreshed');
+  }
+
   async ask(question) {
     try {
       const result = await this.model.generateContent(question);
