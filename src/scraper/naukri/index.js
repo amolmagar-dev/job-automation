@@ -13,7 +13,7 @@ const browser = await browserInstance.getBrowser();
 
 // Dynamic keyword list
 const searchConfigs = [
-  { keyword: 'automation', exp: '3', location: 'Pune' },
+  { keyword: 'nodejs , reactjs', exp: '2', location: 'Pune' }
 ];
 
 export async function startNaukriAutomation() {
