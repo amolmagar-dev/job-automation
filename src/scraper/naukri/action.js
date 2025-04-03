@@ -5,7 +5,7 @@ import { sendWhatsAppMessage } from '../../../notify/whatsapp/whatsappAdapter.js
 
 dotenv.config();
 
-const COOKIE_PATH = './data/naukri_cookies.json';
+const COOKIE_PATH = './cache/naukri_cookies.json';
 
 export async function loginToNaukri(page) {
   if (fs.existsSync(COOKIE_PATH)) {
@@ -159,7 +159,7 @@ export async function scrapePaginatedJobs(page, baseUrl, preferences) {
       return false;
     });
 
-    if (!hasNext || pageNum >= 1) {
+    if (!hasNext || pageNum >= 10) {
       console.log('🚫 No more pages.');
       break;
     }
