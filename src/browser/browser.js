@@ -24,7 +24,7 @@ class BrowserSingleton {
         ],
         defaultViewport: null,
       });
-      console.log('🚀 Puppeteer Browser Launched!');
+      console.log('🚀Browser Launched!');
     }
     return this.browser;
   }
@@ -32,7 +32,7 @@ class BrowserSingleton {
   async closeBrowser() {
     if (this.browser) {
       await this.browser.close();
-      console.log('✅ Puppeteer Browser Closed!');
+      console.log('✅ Browser Closed!');
       this.browser = null;
     }
   }
