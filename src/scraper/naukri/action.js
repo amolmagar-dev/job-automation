@@ -1,7 +1,9 @@
 import fs from 'fs';
 import dotenv from 'dotenv';
-import { getGeminiResponse, getShortGeminiResponse } from '../../ai/gemini.js';
 import { sendWhatsAppMessage } from '../../../notify/whatsapp/whatsappAdapter.js';
+import { GeminiBot } from '../../ai/GeminiBot.js';
+const bot = await GeminiBot.getInstance();  
+
 
 dotenv.config();
 
@@ -249,8 +251,8 @@ async function handleChatForm(page) {
           optionLabels.push(labelText);
         }
 
-        const answer = await getShortGeminiResponse(question, optionLabels);
-        console.log(`🎯 Gemini chose: ${answer}`);
+        const answer = await bot.askOneLine(question, optionLabels);
+        console.log(`🎯 Bot chose: ${answer}`);
 
         let clicked = false;
         for (let i = 0; i < optionLabels.length; i++) {
@@ -284,8 +286,8 @@ async function handleChatForm(page) {
           console.log('✅ Checkbox selected');
         }
       } else {
-        const answer = await getGeminiResponse(question);
-        console.log(`💬 Gemini (text): ${answer}`);
+        const answer = await bot.ask(question);
+        console.log(`💬 Bot (text): ${answer}`);
 
         await page.evaluate((val) => {
           const input = document.querySelector('div[contenteditable="true"]');
