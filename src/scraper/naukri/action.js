@@ -2,6 +2,7 @@ import fs from 'fs';
 import dotenv from 'dotenv';
 import { sendWhatsAppMessage } from '../../../notify/whatsapp/whatsappAdapter.js';
 import { GeminiBot } from '../../ai/GeminiBot.js';
+import path from 'path';
 const bot = await GeminiBot.getInstance();  
 
 
@@ -35,7 +36,28 @@ export async function loginToNaukri(page) {
 
   const cookies = await page.cookies();
   fs.writeFileSync(COOKIE_PATH, JSON.stringify(cookies));
+
   console.log('✅ Session cookies saved.');
+}
+
+export async function downloadResume(page) {
+  await page.goto('https://www.naukri.com/mnjuser/profile', { waitUntil: 'networkidle2' });
+  await page.waitForSelector('.nI-gNb-sb__main', { visible: true });
+  // Scroll back to top before capturing PDF
+  await page.evaluate(() => {
+    window.scrollTo(0, 10);
+  });
+  const cacheDir = path.resolve('cache');
+  fs.mkdirSync(cacheDir, { recursive: true });
+  const pdfPath = path.join(cacheDir, 'resume-profile.pdf');
+  await page.pdf({
+    path: pdfPath,
+    format: 'A4',
+    printBackground: true,
+  });
+  console.log(`:page_facing_up: Full resume profile page saved as PDF: ${pdfPath}`);
+  GeminiBot.refreshInstruction();
+  console.log('🔁 Bot instruction refreshed');
 }
 
 export async function searchJobs(page, keyword, experience, location) {

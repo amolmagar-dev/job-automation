@@ -17,6 +17,7 @@ export class GeminiBot {
   static async getInstance() {
     if (!instance) {
       const systemInstruction = await PepareAndTrainBot();
+      if (!systemInstruction) return false;
       instance = new GeminiBot(systemInstruction);
     }
     return instance;

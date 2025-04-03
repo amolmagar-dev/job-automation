@@ -4,8 +4,10 @@ import {
   loginToNaukri,
   applyForJobs,
   searchJobs,
-  scrapePaginatedJobs
+  scrapePaginatedJobs,
+  downloadResume
 } from './action.js';
+import { isBotTrained } from './helper.js';
 
 dotenv.config();
 
@@ -28,6 +30,13 @@ export async function startNaukriAutomation() {
       );
 
       await loginToNaukri(page);
+
+      // Check if the bot is trained
+      const isTrained = isBotTrained()
+      if (!isTrained) {        // download the resume
+        console.log('📥 Downloading resume...');
+        await downloadResume(page);
+      }
 
       // Pick dynamic config
       const { keyword, exp, location } = searchConfigs[index];

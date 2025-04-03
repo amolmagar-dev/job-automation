@@ -16,8 +16,8 @@ export async function PepareAndTrainBot() {
 
   const pdf = fs.readdirSync(userDataDir).find(f => f.toLowerCase().endsWith('.pdf'));
   if (!pdf) {
-    console.error('❌ No PDF resume found.');
-    return 'no resume';
+    console.error('❌ No PDF resume found in cache. Please wait, downloading and training the bot...');
+    return false
   }
 
   const resumePath = path.join(userDataDir, pdf);
