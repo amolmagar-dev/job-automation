@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { loadSystemInstruction } from './SystemInstructionLoader.js';
+import { PepareAndTrainBot } from './BotTrainer.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -16,14 +16,14 @@ export class GeminiBot {
 
   static async getInstance() {
     if (!instance) {
-      const systemInstruction = await loadSystemInstruction();
+      const systemInstruction = await PepareAndTrainBot();
       instance = new GeminiBot(systemInstruction);
     }
     return instance;
   }
 
   static async refreshInstruction() {
-    const newInstruction = await regenerateSystemInstruction(); // Force re-read from resume
+    const newInstruction = await PepareAndTrainBot(); // Force re-read from resume
     instance = new GeminiBot(newInstruction); // Replace instance
     console.log('🔁 System instruction updated and bot instance refreshed');
   }

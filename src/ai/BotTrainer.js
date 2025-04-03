@@ -4,9 +4,9 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import dotenv from 'dotenv';
 dotenv.config();
 
-export async function loadSystemInstruction() {
+export async function PepareAndTrainBot() {
   const cacheFile = path.resolve('cache/system-instruction.json');
-  const userDataDir = path.resolve('user-data');
+  const userDataDir = path.resolve('cache')
 
   if (fs.existsSync(cacheFile)) {
     const data = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
@@ -17,7 +17,7 @@ export async function loadSystemInstruction() {
   const pdf = fs.readdirSync(userDataDir).find(f => f.toLowerCase().endsWith('.pdf'));
   if (!pdf) {
     console.error('❌ No PDF resume found.');
-    process.exit(1);
+    return 'no resume';
   }
 
   const resumePath = path.join(userDataDir, pdf);
