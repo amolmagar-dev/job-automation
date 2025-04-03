@@ -15,7 +15,7 @@ const browser = await browserInstance.getBrowser();
 
 // Dynamic keyword list
 const searchConfigs = [
-  { keyword: 'nodejs , reactjs', exp: '2', location: 'Pune' }
+  { keyword: process.env.JOB_KEYWORDS, exp: process.env.JOB_EXPERIENCE, location: process.env.JOB_LOCATION },
 ];
 
 export async function startNaukriAutomation() {
@@ -50,7 +50,7 @@ export async function startNaukriAutomation() {
         location,
         minExp: Number(exp),
         maxExp: Number(exp) + 2,
-        requiredSkills: [],
+        requiredSkills: keyword.split(',').map(skill => skill.trim()),
         minRating: 3.5
       };
 
@@ -58,6 +58,8 @@ export async function startNaukriAutomation() {
       if (jobs.length === 0) {
         console.log('No jobs found for the given criteria');
       } else {
+        console.log(`Found ${jobs.length} jobs matching criteria`);
+        console.log('Applying for jobs...');
         await applyForJobs(browser, jobs);
       }
 

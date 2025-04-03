@@ -101,7 +101,8 @@ export async function searchJobs(page, keyword, experience, location) {
   if (sortByButton) {
     await sortByButton.click();
     await page.waitForSelector("ul[data-filter-id='sort']", { visible: true });
-    await new Promise(resolve => setTimeout(resolve, 3000)); const dateOption = await page.$("li[title='Date'] a[data-id='filter-sort-f']");
+    console.log(`🔄 Sorting jobs by ${process.env.JOB_SHORT_BY}`);
+    await new Promise(resolve => setTimeout(resolve, 3000)); const dateOption = await page.$(`li[title=${process.env.JOB_SHORT_BY}] a[data-id='filter-sort-f']`);
     if (dateOption) {
       await dateOption.click();
     }
@@ -194,12 +195,13 @@ export async function scrapePaginatedJobs(page, baseUrl, preferences) {
   }
 
   console.log(`✅ Scraped total ${allJobs.length} jobs`);
+  console.log(`🔍 Filtering jobs based on preferences... with skills: ${preferences.requiredSkills}`);
   return filterJobs(allJobs, preferences);
 }
 
 export async function applyForJobs(browser, jobs) {
   for (const job of jobs) {
-    console.log(`\n💼 Applying to: ${job.title} | ${job.company}`);
+    console.log(`\n💼 Applying to: ${job.title} | ${job.company} Skills: ${job?.skills}`);
     const jobPage = await browser.newPage();
     await jobPage.goto(job.applyLink, { waitUntil: 'networkidle2' });
 
