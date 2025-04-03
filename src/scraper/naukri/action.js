@@ -1,8 +1,8 @@
 import fs from 'fs';
 import dotenv from 'dotenv';
-import { sendWhatsAppMessage } from '../../../notify/whatsapp/whatsappAdapter.js';
 import { GeminiBot } from '../../ai/GeminiBot.js';
 import path from 'path';
+import { notifyAll } from '../../../notifier/index.js';
 const bot = await GeminiBot.getInstance();  
 
 
@@ -219,11 +219,11 @@ export async function applyForJobs(browser, jobs) {
           return msg?.innerText;
         });
         if (success) {
-          sendWhatsAppMessage(getWhatsappJobNotification(job));
+          notifyAll(createNotification(job));
           console.log(`✅ ${success}`);
         }
       } else {
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise(resolve => setTimeout(resolve, 4000));
         const success = await jobPage.evaluate(() => {
           const msg = Array.from(document.querySelectorAll('body *')).find(el =>
             el.innerText?.includes('You have successfully applied to')
@@ -231,7 +231,7 @@ export async function applyForJobs(browser, jobs) {
           return msg?.innerText;
         });
         if (success) {
-          sendWhatsAppMessage(getWhatsappJobNotification(job));
+          notifyAll(createNotification(job));
           console.log(`✅ ${success}`);
         }
         else console.log("🤷 Unknown apply result");
@@ -332,7 +332,7 @@ async function handleChatForm(page) {
   }
 }
 
-function getWhatsappJobNotification(job) {
+function createNotification(job) {
   return `📢 *Job Applied Successfully!*
 
 🔹 *Position:* ${job.title}
