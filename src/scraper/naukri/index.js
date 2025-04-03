@@ -41,7 +41,7 @@ export async function startNaukriAutomation() {
         location,
         minExp: Number(exp),
         maxExp: Number(exp) + 2,
-        requiredSkills: [],
+        requiredSkills: keyword.split(',').map(skill => skill.trim()),
         minRating: 3.5
       };
 

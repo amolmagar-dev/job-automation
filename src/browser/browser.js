@@ -15,7 +15,7 @@ class BrowserSingleton {
   async getBrowser() {
     if (!this.browser) {
       this.browser = await puppeteer.launch({
-        headless: false, // Set to true for production
+        headless: process.env.BROWSER_HEADLESS, // Set to true for production
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',

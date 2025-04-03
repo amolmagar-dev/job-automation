@@ -159,7 +159,8 @@ export async function scrapePaginatedJobs(page, baseUrl, preferences) {
       return false;
     });
 
-    if (!hasNext || pageNum >= 10) {
+    if (!hasNext || pageNum >= process.env.SCRAPE_PAGES) {
+      console.log('✅ All pages scraped or limit reached.');
       console.log('🚫 No more pages.');
       break;
     }
