@@ -10,6 +10,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev:naukri": "nodemon src/scraper/naukri/index.js",
+    "dev:glassdoor": "nodemon src/scraper/glassdoor/index.js",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
