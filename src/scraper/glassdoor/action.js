@@ -112,7 +112,7 @@ export async function searchGlassdoorJobs(page, keyword, location) {
         const posted = card.querySelector('[data-test="job-age"]')?.innerText?.trim() || '';
         const link = card.querySelector('[data-test="job-title"]')?.href || '';
         const easyApply = card.innerText.toLowerCase().includes('easy apply');
-    
+
         return easyApply
           ? { title, company, location, salary, posted, link, easyApply }
           : null;
@@ -129,27 +129,157 @@ export async function searchGlassdoorJobs(page, keyword, location) {
 export async function applyForJobs(browser, jobs) {
   const page = await browser.newPage();
 
-  for (let i = 0; i < jobs.length; i++) {
-    const job = jobs[i];
+  for (const job of jobs) {
     console.log(`\n[INFO] Navigating to job: ${job.title} → ${job.link}`);
 
     try {
       await page.goto(job.link, { waitUntil: 'networkidle2' });
-
-      console.log(`[INFO] Waiting for Easy Apply button`);
-      await page.waitForSelector('button[data-test="easyApply"]', { visible: true, timeout: 5000 });
-      await page.click('button[data-test="easyApply"]');
-      console.log(`[CLICKED] Easy Apply button`);
-
-      // TODO: Handle the application form here in next steps
-
-      console.log(`[SUCCESS] Easy Apply opened for: ${job.title}`);
+      await handleEasyApply(browser, page);
+      console.log(`[SUCCESS] Applied to: ${job.title}`);
     } catch (err) {
-      console.error(`[ERROR] Failed to open Easy Apply for ${job.title}: ${err.message}`);
+      console.error(`[ERROR] Failed to apply to ${job.title}: ${err.message}`);
     }
 
+    await new Promise(resolve => setTimeout(resolve, 3000));
   }
 
   await page.close();
 }
 
+async function handleEasyApply(browser, page) {
+  console.log(`[INFO] Waiting for Easy Apply button`);
+  await page.waitForSelector('button[data-test="easyApply"]', { visible: true, timeout: 5000 });
+
+  const [newPagePromise] = await Promise.all([
+    new Promise(resolve => browser.once('targetcreated', target => resolve(target.page()))),
+    page.click('button[data-test="easyApply"]'),
+  ]);
+
+  const applyPage = await newPagePromise;
+  await applyPage.bringToFront();
+
+  await new Promise(resolve => setTimeout(resolve, 3000));
+  await fillContactForm(applyPage);
+  await new Promise(resolve => setTimeout(resolve, 5000));
+  await clickFirstVisibleContinue(applyPage);
+  await new Promise(resolve => setTimeout(resolve, 3000));
+  await handleResumeStep(applyPage);
+  await new Promise(resolve => setTimeout(resolve, 3000));
+  await applyPage.close();
+}
+
+async function fillContactForm(applyPage) {
+  console.log(`[INFO] Filling Easy Apply form`);
+
+  await fillIfEmpty(applyPage, 'input[name="firstName"]', 'Amol');
+  await fillIfEmpty(applyPage, 'input[name="lastName"]', 'Magar');
+  await fillIfEmpty(applyPage, 'input[name="email"]', 'amolmagar.connect@gmail.com');
+  await fillIfEmpty(applyPage, 'input[name="phoneNumber"]', '9730989996');
+  await fillIfEmpty(applyPage, 'input[name="location.city"]', 'Pune');
+
+  await clickFirstVisibleContinue(applyPage);
+
+}
+
+async function fillIfEmpty(page, selector, value) {
+  const input = await page.$(selector);
+  if (input) {
+    const val = await page.evaluate(el => el.value, input);
+    if (!val.trim()) {
+      await input.click({ clickCount: 3 });
+      await input.press('Backspace');
+      await input.type(value, { delay: 100 });
+    }
+  }
+}
+
+async function clickFirstVisibleContinue(page) {
+  console.log(`[INFO] Clicking first visible 'Continue' button`);
+  const buttons = await page.$$('[data-testid="continue-button"]');
+
+  for (const btn of buttons) {
+    const isVisible = await page.evaluate(el => {
+      const style = window.getComputedStyle(el);
+      return style.display !== 'none' && style.visibility !== 'hidden' && el.offsetHeight > 0;
+    }, btn);
+
+    if (isVisible) {
+      await btn.click();
+      console.log(`[CLICKED] First visible 'Continue' button`);
+      return;
+    }
+  }
+
+  console.warn(`[WARN] No visible 'Continue' button found`);
+}
+
+async function handleResumeStep(page) {
+  console.log(`[INFO] Handling resume selection step`);
+
+  const cardSelector = '[data-testid="FileResumeCard"]';
+  await page.waitForSelector(cardSelector, { timeout: 10000 });
+  await page.screenshot({ path: 'resume_step_debug.png' });
+
+  const cards = await page.$$(cardSelector);
+  console.log(`[DEBUG] Found ${cards.length} resume card(s)`);
+
+  for (const [index, card] of cards.entries()) {
+    const box = await card.boundingBox();
+    const isVisible = box !== null && box.width > 0 && box.height > 0;
+
+    console.log(`[DEBUG] Card ${index + 1}: bounding box = ${JSON.stringify(box)}, visible = ${isVisible}`);
+
+    if (isVisible) {
+      await card.evaluate(el => el.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      await card.click({ delay: 100 });
+      console.log(`[CLICKED] Selected resume card #${index + 1}`);
+      break;
+    }
+  }
+
+  await page.screenshot({ path: 'resume_step_post_click.png' });
+  console.log(`[DEBUG] Screenshot taken after click attempt: resume_step_post_click.png`);
+
+  await clickFirstVisibleContinue(page);
+  // we have to skip the optional part so wait for new form completion
+  await new Promise(resolve => setTimeout(resolve, 3000));
+  await clickFirstVisibleContinue(page);
+
+  await new Promise(resolve => setTimeout(resolve, 3000));
+  await clickFirstVisibleContinue(page);
+
+  // here will be next stape
+  await new Promise(resolve => setTimeout(resolve, 3000));
+  await handleFinalSubmit(page)
+  await new Promise(resolve => setTimeout(resolve, 3000));
+
+}
+
+async function handleFinalSubmit(page) {
+  const submitSelector = 'button.ia-continueButton span:text("Submit your application")';
+
+  console.log('[INFO] Waiting for final submit button');
+  await page.waitForSelector('button.ia-continueButton', { timeout: 10000 });
+
+  const buttons = await page.$$('button.ia-continueButton');
+  for (const [i, btn] of buttons.entries()) {
+    const text = await btn.evaluate(el => el.textContent?.trim());
+    if (text === 'Submit your application') {
+      const box = await btn.boundingBox();
+      const isVisible = box !== null && box.width > 0 && box.height > 0;
+
+      console.log(`[DEBUG] Submit Button #${i + 1}: bounding box = ${JSON.stringify(box)}, visible = ${isVisible}`);
+
+      if (isVisible) {
+        await btn.evaluate(el => el.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+        await page.waitForTimeout(300);
+        await btn.click({ delay: 100 });
+        console.log('[CLICKED] Final Submit button');
+        return;
+      }
+    }
+  }
+
+  console.error('[ERROR] Final Submit button not found or not visible');
+}
