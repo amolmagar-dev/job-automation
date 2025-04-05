@@ -19,25 +19,32 @@ export default function setupSocketHandlers(io) {
         // Handle client requesting to start streaming
         socket.on('start-stream', async (data) => {
             try {
-                const { jobId, page } = data || {};
-
-                if (!page) {
-                    socket.emit('status', {
-                        status: 'error',
-                        message: 'No page provided for streaming',
-                        jobId
-                    });
-                    return;
-                }
-
+                const { jobId } = data || {};
                 logger.info(`Client ${sessionId} requested to start streaming job ${jobId || 'unknown'}`);
 
-                // Emit status update
+                // Get browser instance and create new page
+                const browser = await browserInstance.getBrowser();
+                const page = await browser.newPage();
+
+                // Set viewport size to match streaming dimensions
+                await page.setViewport({
+                    width: 1280,
+                    height: 720
+                });
+
+                // Navigate to a starting page (this could be configurable)
+                await page.goto('https://www.google.com', { waitUntil: 'domcontentloaded' });
+
+                // Update client with status
                 socket.emit('status', {
-                    status: 'streaming',
-                    message: 'Started streaming browser activity',
+                    status: 'initializing',
+                    message: 'Starting browser automation',
                     jobId
                 });
+
+                // Store page reference on socket for cleanup
+                socket.data.page = page;
+                socket.data.jobId = jobId;
 
                 // Start streaming the page
                 await browserInstance.startStreaming(
@@ -54,6 +61,13 @@ export default function setupSocketHandlers(io) {
                         maxHeight: 720
                     }
                 );
+
+                // Emit status update
+                socket.emit('status', {
+                    status: 'streaming',
+                    message: 'Started streaming browser activity',
+                    jobId
+                });
             } catch (error) {
                 logger.error(`Error starting stream for ${sessionId}:`, error);
                 socket.emit('status', {
@@ -64,15 +78,27 @@ export default function setupSocketHandlers(io) {
         });
 
         // Handle client requesting to stop streaming
-        socket.on('stop-stream', () => {
-            logger.info(`Client ${sessionId} requested to stop streaming`);
+        socket.on('stop-stream', async () => {
+            const jobId = socket.data?.jobId || 'unknown';
+            logger.info(`Client ${sessionId} requested to stop streaming job ${jobId}`);
 
             // Stop the streaming session
             browserInstance.stopStreaming(sessionId);
 
+            // Close the page if we have a reference to it
+            if (socket.data.page) {
+                try {
+                    await socket.data.page.close();
+                    socket.data.page = null;
+                } catch (error) {
+                    logger.error(`Error closing page for session ${sessionId}:`, error);
+                }
+            }
+
             socket.emit('status', {
                 status: 'stopped',
-                message: 'Browser streaming stopped'
+                message: 'Browser streaming stopped',
+                jobId
             });
         });
 
@@ -82,6 +108,13 @@ export default function setupSocketHandlers(io) {
 
             // Stop any active streaming
             browserInstance.stopStreaming(sessionId);
+
+            // Close the page if we have a reference to it
+            if (socket.data.page) {
+                socket.data.page.close().catch(err => {
+                    logger.error(`Error closing page on disconnect: ${err.message}`);
+                });
+            }
         });
     });
 
