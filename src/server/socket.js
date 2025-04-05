@@ -3,6 +3,7 @@
  */
 import logger from '../utils/logger.js';
 import browserInstance from '../browser/browser.js';
+import { startNaukriAutomation, getActivePage, getActiveJobId } from '../scraper/naukri/index.js';
 
 /**
  * Setup Socket.io event handlers
@@ -12,6 +13,9 @@ export default function setupSocketHandlers(io) {
     // Namespace for browser streaming
     const streamNamespace = io.of('/browser-stream');
 
+    // Track active automation jobs
+    const activeJobs = new Map();
+
     streamNamespace.on('connection', (socket) => {
         const sessionId = socket.id;
         logger.info(`New streaming client connected: ${sessionId}`);
@@ -19,40 +23,92 @@ export default function setupSocketHandlers(io) {
         // Handle client requesting to start streaming
         socket.on('start-stream', async (data) => {
             try {
-                const { jobId } = data || {};
+                const { jobId = `job_${Date.now()}`, platform = 'naukri' } = data || {};
                 logger.info(`Client ${sessionId} requested to start streaming job ${jobId || 'unknown'}`);
-
-                // Get browser instance and create new page
-                const browser = await browserInstance.getBrowser();
-                const page = await browser.newPage();
-
-                // Set viewport size to match streaming dimensions
-                await page.setViewport({
-                    width: 1280,
-                    height: 720
-                });
-
-                // Navigate to a starting page (this could be configurable)
-                await page.goto('https://www.google.com', { waitUntil: 'domcontentloaded' });
 
                 // Update client with status
                 socket.emit('status', {
                     status: 'initializing',
-                    message: 'Starting browser automation',
-                    jobId
+                    message: `Starting ${platform} automation`,
+                    jobId,
+                    platform
                 });
 
-                // Store page reference on socket for cleanup
-                socket.data.page = page;
+                // Store job references for cleanup
                 socket.data.jobId = jobId;
+                socket.data.platform = platform;
+
+                // Check if we need to start a new automation or connect to existing one
+                let activePage = getActivePage();
+
+                if (!activePage) {
+                    // No active automation, start a new one in a separate process
+                    logger.info(`Starting new ${platform} automation for job ${jobId}`);
+
+                    // Start the automation in a non-blocking way
+                    startNaukriAutomation(jobId).catch(err => {
+                        logger.error(`Error in automation job ${jobId}:`, err);
+                        socket.emit('status', {
+                            status: 'error',
+                            message: `Automation error: ${err.message}`,
+                            jobId
+                        });
+                    });
+
+                    // Wait for the automation to create a page
+                    for (let i = 0; i < 10; i++) {
+                        activePage = getActivePage();
+                        if (activePage) break;
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+
+                    if (!activePage) {
+                        throw new Error('Timed out waiting for automation to start');
+                    }
+
+                    // Track this job
+                    activeJobs.set(jobId, {
+                        startTime: Date.now(),
+                        platform,
+                        sessionIds: new Set([sessionId])
+                    });
+                } else {
+                    // Connect to existing automation
+                    const existingJobId = getActiveJobId();
+                    logger.info(`Connecting to existing ${platform} automation job ${existingJobId}`);
+
+                    // Update the client with the existing job ID
+                    socket.emit('status', {
+                        status: 'connecting',
+                        message: `Connecting to existing ${platform} automation`,
+                        jobId: existingJobId,
+                        platform
+                    });
+
+                    socket.data.jobId = existingJobId;
+
+                    // Add this session to the existing job
+                    if (activeJobs.has(existingJobId)) {
+                        activeJobs.get(existingJobId).sessionIds.add(sessionId);
+                    } else {
+                        activeJobs.set(existingJobId, {
+                            startTime: Date.now(),
+                            platform,
+                            sessionIds: new Set([sessionId])
+                        });
+                    }
+                }
 
                 // Start streaming the page
                 await browserInstance.startStreaming(
                     sessionId,
-                    page,
+                    activePage,
                     (frameData) => {
                         // Emit frame data to the client
-                        socket.emit('stream-frame', frameData);
+                        socket.emit('stream-frame', {
+                            ...frameData,
+                            jobId: socket.data.jobId
+                        });
                     },
                     {
                         frameRate: 25,
@@ -65,8 +121,9 @@ export default function setupSocketHandlers(io) {
                 // Emit status update
                 socket.emit('status', {
                     status: 'streaming',
-                    message: 'Started streaming browser activity',
-                    jobId
+                    message: `Started streaming ${platform} automation`,
+                    jobId: socket.data.jobId,
+                    platform
                 });
             } catch (error) {
                 logger.error(`Error starting stream for ${sessionId}:`, error);
@@ -85,19 +142,21 @@ export default function setupSocketHandlers(io) {
             // Stop the streaming session
             browserInstance.stopStreaming(sessionId);
 
-            // Close the page if we have a reference to it
-            if (socket.data.page) {
-                try {
-                    await socket.data.page.close();
-                    socket.data.page = null;
-                } catch (error) {
-                    logger.error(`Error closing page for session ${sessionId}:`, error);
+            // Remove this session from the job
+            if (activeJobs.has(jobId)) {
+                const job = activeJobs.get(jobId);
+                job.sessionIds.delete(sessionId);
+
+                // If no more sessions are watching this job, we could potentially
+                // stop the automation, but for now we'll let it continue running
+                if (job.sessionIds.size === 0) {
+                    logger.info(`No more viewers for job ${jobId}, but keeping automation running`);
                 }
             }
 
             socket.emit('status', {
                 status: 'stopped',
-                message: 'Browser streaming stopped',
+                message: 'Streaming stopped (automation continues in background)',
                 jobId
             });
         });
@@ -109,11 +168,15 @@ export default function setupSocketHandlers(io) {
             // Stop any active streaming
             browserInstance.stopStreaming(sessionId);
 
-            // Close the page if we have a reference to it
-            if (socket.data.page) {
-                socket.data.page.close().catch(err => {
-                    logger.error(`Error closing page on disconnect: ${err.message}`);
-                });
+            // Remove this session from any jobs it was watching
+            const jobId = socket.data?.jobId;
+            if (jobId && activeJobs.has(jobId)) {
+                const job = activeJobs.get(jobId);
+                job.sessionIds.delete(sessionId);
+
+                if (job.sessionIds.size === 0) {
+                    logger.info(`No more viewers for job ${jobId}, but keeping automation running`);
+                }
             }
         });
     });
