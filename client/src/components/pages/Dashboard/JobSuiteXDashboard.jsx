@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import DashboardLayout from '../../layout/DashboardLayout';
 import DashboardSummary from './DashboardSummary.jsx';
 import ServiceManagement from '../service_management/ServiceManagement.jsx';
+import AutoJobApplication from '../service_management/AutoJobApplication.jsx';
 // import ApplicationTracker from './components/ApplicationTracker';
 // Import other components as needed
 
@@ -22,7 +23,9 @@ const JobSuiteXDashboard = () => {
             case 'hr-connect':
                 return <div className="placeholder-section">HR Connect Component Coming Soon</div>;
             case 'services':
-                return <ServiceManagement />;
+                return <ServiceManagement onNavigateToService={(service) => setActivePage(service)} />;
+            case 'auto-apply':
+                return <AutoJobApplication />;
             default:
                 return <DashboardSummary />;
         }

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import './ServiceManagement.css';
 
-const ServiceManagement = () => {
+const ServiceManagement = ({ onNavigateToService }) => {
     const [selectedService, setSelectedService] = useState(null);
 
     // Mock data for available services
@@ -29,6 +29,7 @@ const ServiceManagement = () => {
             description: 'Automatically apply to matching jobs across multiple platforms',
             icon: '🤖',
             status: 'active',
+            hasDetailedConfig: true,
             configOptions: ['Job board preferences', 'Application frequency', 'Job title filters', 'Location preferences']
         },
         {
@@ -59,8 +60,13 @@ const ServiceManagement = () => {
 
     // Handle service selection
     const handleServiceSelect = (service) => {
+        // If it's the auto-apply service, navigate to the Auto Job Application component
+        if (service.id === 'auto-apply' && onNavigateToService) {
+            onNavigateToService('auto-apply');
+            return;
+        }
+        // Otherwise, show the config in this component
         setSelectedService(service);
-        // In a real app, we might navigate to a dedicated config page
     };
 
     // Handle toggling service status
@@ -172,7 +178,22 @@ const ServiceManagement = () => {
                         <p className="service-description">{service.description}</p>
 
                         <div className="service-footer">
-                            <button className="configure-button">Configure</button>
+                            <button
+                                className="configure-button"
+                                onClick={(e) => {
+                                    e.stopPropagation(); // Prevent triggering the card click
+                                    if (service.id === 'auto-apply' && onNavigateToService) {
+                                        onNavigateToService('auto-apply');
+                                    } else {
+                                        handleServiceSelect(service);
+                                    }
+                                }}
+                            >
+                                {service.hasDetailedConfig ? 'Advanced Configuration' : 'Configure'}
+                            </button>
+                            {service.hasDetailedConfig && (
+                                <span className="detailed-config-badge">Advanced</span>
+                            )}
                         </div>
                     </div>
                 ))}
