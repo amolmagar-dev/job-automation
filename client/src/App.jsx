@@ -1,106 +1,56 @@
-import { useState, useEffect } from 'react';
-import { io } from 'socket.io-client';
-import BrowserViewer from './components/BrowserViewer';
-import StatusBar from './components/StatusBar';
+// src/App.jsx
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import JobSuiteXLanding from './components/pages/Landing/JobSuiteXLanding';
+import Dashboard from './components/pages/Dashboard/JobSuiteXDashboard';
 import './App.css';
 
-function App() {
-  const [socket, setSocket] = useState(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [status, setStatus] = useState({ status: 'disconnected', message: 'Not connected' });
-  const [frameData, setFrameData] = useState(null);
+// Protected route component
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
 
-  // Connect to socket on component mount
-  useEffect(() => {
-    // Create socket connection to the streaming namespace
-    const newSocket = io(`${window.location.origin}/browser-stream`, {
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-    });
+  if (loading) {
+    return <div className="loading-container">Loading...</div>;
+  }
 
-    // Set up event listeners
-    newSocket.on('connect', () => {
-      console.log('Connected to streaming server');
-      setIsConnected(true);
-    });
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
 
-    newSocket.on('disconnect', () => {
-      console.log('Disconnected from streaming server');
-      setIsConnected(false);
-      setStatus({ status: 'disconnected', message: 'Disconnected from server' });
-    });
+  return children;
+};
 
-    newSocket.on('status', (statusData) => {
-      console.log('Status update:', statusData);
-      setStatus(statusData);
-    });
-
-    newSocket.on('stream-frame', (data) => {
-      setFrameData(data);
-    });
-
-    // Save socket to state
-    setSocket(newSocket);
-
-    // Clean up on unmount
-    return () => {
-      if (newSocket) {
-        newSocket.disconnect();
-      }
-    };
-  }, []);
-
-  // Handler to start streaming
-  const handleStartStream = () => {
-    if (!socket || !isConnected) return;
-
-    console.log('Requesting to start streaming');
-    socket.emit('start-stream', { jobId: `job_${Date.now()}` });
-  };
-
-  // Handler to stop streaming
-  const handleStopStream = () => {
-    if (!socket || !isConnected) return;
-
-    console.log('Requesting to stop streaming');
-    socket.emit('stop-stream');
-    setFrameData(null);
-  };
-
+function AppRoutes() {
   return (
-    <div className="app-container">
-      <header className="app-header">
-        <h1>Browser Automation Monitor</h1>
-        <div className="connection-status">
-          <span className={isConnected ? 'status-connected' : 'status-disconnected'}>
-            {isConnected ? 'Connected' : 'Disconnected'}
-          </span>
-        </div>
-      </header>
+    <Routes>
+      <Route path="/" element={<JobSuiteXLanding />} />
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      {/* Add more routes here as needed */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
 
-      <main className="content-area">
-        <BrowserViewer frameData={frameData} />
-      </main>
-
-      <StatusBar status={status} />
-
-      <div className="control-panel">
-        <button
-          onClick={handleStartStream}
-          disabled={!isConnected || status.status === 'streaming'}
-          className="control-button start-button"
-        >
-          Start Streaming
-        </button>
-        <button
-          onClick={handleStopStream}
-          disabled={!isConnected || status.status !== 'streaming'}
-          className="control-button stop-button"
-        >
-          Stop Streaming
-        </button>
-      </div>
-    </div>
+function App() {
+  return (
+    <Router>
+      <GoogleOAuthProvider clientId={'24150226404-nj776uql5gbojddrmnodt6rj8n6kdrr0.apps.googleusercontent.com'}>
+        <AuthProvider>
+          <div className="App">
+            <AppRoutes />
+          </div>
+        </AuthProvider>
+      </GoogleOAuthProvider>
+    </Router>
   );
 }
 

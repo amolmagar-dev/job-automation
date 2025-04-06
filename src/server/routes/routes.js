@@ -1,7 +1,7 @@
 /**
  * API routes for the browser automation system
  */
-import logger from '../utils/logger.js';
+import logger from '../../utils/logger.js';
 
 /**
  * Route definitions
