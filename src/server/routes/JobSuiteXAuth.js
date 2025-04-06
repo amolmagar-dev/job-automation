@@ -1,10 +1,9 @@
 /**
  * Authentication routes for the JobSuiteX system
  */
-import logger from '../utils/logger.js';
 import { hash, compare } from 'bcrypt';
-import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
+import logger from '../../utils/logger.js';
 
 // Initialize Google OAuth client
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -16,22 +15,6 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
  * @param {Function} done - Callback to signal completion
  */
 export default async function authRoutes(fastify, options) {
-    // Register JWT plugin for authentication
-    fastify.register(import('@fastify/jwt'), {
-        secret: process.env.JWT_SECRET || 'supersecretkey',
-        sign: {
-            expiresIn: '7d'
-        }
-    });
-
-    // JWT verification utility
-    fastify.decorate('authenticate', async (request, reply) => {
-        try {
-            await request.jwtVerify();
-        } catch (err) {
-            reply.code(401).send({ error: 'Unauthorized', message: 'Invalid or expired token' });
-        }
-    });
 
     // User signup endpoint
     fastify.post('/auth/signup', async (request, reply) => {

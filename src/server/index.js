@@ -5,10 +5,16 @@ import { fileURLToPath } from 'url';
 import fastifyCors from '@fastify/cors';
 import fastifyWebsocket from '@fastify/websocket';
 import fastifyStatic from '@fastify/static';
+import fastifyMongo from '@fastify/mongodb';
+import dotenv from 'dotenv';
 import { Server as SocketIOServer } from 'socket.io';
 import config from '../../config/config.js';
-import routes from './routes.js';
+import routes from './routes/routes.js';
+import authRoutes from './routes/JobSuiteXAuth.js';
 import setupSocketHandlers from './socket.js';
+
+// Load environment variables
+dotenv.config();
 
 // Get current directory (equivalent to __dirname in CommonJS)
 const __filename = fileURLToPath(import.meta.url);
@@ -35,6 +41,48 @@ await fastify.register(fastifyCors, {
 // Register WebSocket support
 await fastify.register(fastifyWebsocket);
 
+// Register MongoDB connector
+await fastify.register(fastifyMongo, {
+    url: process.env.MONGODB_URI || 'mongodb://localhost:27017/jobsuitex',
+    forceClose: true,
+});
+
+// Register JWT plugin for authentication
+await fastify.register(import('@fastify/jwt'), {
+    secret: process.env.JWT_SECRET || 'supersecretkey',
+    sign: {
+        expiresIn: '7d'
+    }
+});
+
+// JWT verification utility
+fastify.decorate('authenticate', async (request, reply) => {
+    try {
+        await request.jwtVerify();
+    } catch (err) {
+        reply.code(401).send({ error: 'Unauthorized', message: 'Invalid or expired token' });
+    }
+});
+
+// Create MongoDB indexes when the connection is ready
+fastify.addHook('onReady', async () => {
+    try {
+        // Create a unique index on email field to prevent duplicates
+        await fastify.mongo.db.collection('users').createIndex(
+            { email: 1 },
+            { unique: true }
+        );
+
+        // Optional: Create additional indexes for performance optimization
+        await fastify.mongo.db.collection('users').createIndex({ googleId: 1 });
+        await fastify.mongo.db.collection('users').createIndex({ authProvider: 1 });
+
+        fastify.log.info('MongoDB indexes created successfully');
+    } catch (err) {
+        fastify.log.error('Error creating MongoDB indexes:', err);
+    }
+});
+
 // Serve static files for the frontend
 await fastify.register(fastifyStatic, {
     root: path.join(__dirname, '../../frontend/public'),
@@ -43,6 +91,9 @@ await fastify.register(fastifyStatic, {
 
 // Register API routes
 await fastify.register(routes, { prefix: '/api' });
+
+// Register auth routes
+await fastify.register(authRoutes, { prefix: '/api' });
 
 // Start the server
 const start = async () => {
