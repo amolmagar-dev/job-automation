@@ -2,48 +2,72 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import axios from 'axios';
+import {
+    Briefcase,
+    Settings,
+    FileText,
+    Calendar,
+    Bell,
+    CheckCircle,
+    AlertCircle,
+    PlayCircle,
+    PlusCircle,
+    Save,
+    Eye,
+    EyeOff,
+    User,
+    Lock,
+    RotateCw
+} from 'lucide-react';
 import './AutoJobApplication.css';
 
-const API_URL = 'http://localhost:3000';
+const API_URL =  'http://localhost:3000';
 
 const AutoJobApplication = () => {
-    const [activeProvider, setActiveProvider] = useState('naukri');
+    const [activeTab, setActiveTab] = useState('portals');
+    const [configName, setConfigName] = useState('My Naukri Config');
+    const [isActive, setIsActive] = useState(false);
     const [loading, setLoading] = useState(false);
     const [configs, setConfigs] = useState([]);
     const [currentConfigId, setCurrentConfigId] = useState(null);
 
-    // Form states for Naukri
-    const [naukriEnabled, setNaukriEnabled] = useState(false);
-    const [configName, setConfigName] = useState('My Naukri Config');
-    const [naukriEmail, setNaukriEmail] = useState('');
-    const [naukriPassword, setNaukriPassword] = useState('');
+    // Credentials state
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [credentialsSaved, setCredentialsSaved] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+
+    // Search criteria state
     const [jobKeywords, setJobKeywords] = useState('');
     const [jobLocation, setJobLocation] = useState('');
-    const [jobType, setJobType] = useState('fulltime');
     const [jobExperience, setJobExperience] = useState(2);
-    const [jobSortBy, setJobSortBy] = useState('Date');
+    const [jobType, setJobType] = useState('fulltime');
+    const [minRating, setMinRating] = useState(3.5);
+    const [maxApplications, setMaxApplications] = useState(10);
 
-    // Application settings
+    // Schedule state
     const [applyFrequency, setApplyFrequency] = useState('daily');
     const [applyDays, setApplyDays] = useState([1, 2, 3, 4, 5]); // Monday to Friday
-    const [maxApplications, setMaxApplications] = useState(10);
-    const [minRating, setMinRating] = useState(3.5);
-    const [requiredSkills, setRequiredSkills] = useState([]);
+    const [applyTime, setApplyTime] = useState('09:00');
 
-    // Notification settings
-    const [emailNotify, setEmailNotify] = useState(true);
-    const [whatsappNotify, setWhatsappNotify] = useState(false);
-    const [whatsappNumber, setWhatsappNumber] = useState('');
+    // Resume update state
+    const [autoUpdateResume, setAutoUpdateResume] = useState(false);
+    const [optimizeKeywords, setOptimizeKeywords] = useState(true);
 
-    // Password visibility
-    const [passwordVisible, setPasswordVisible] = useState(false);
+    // Portal data
+    const portalData = [
+        { id: 'N', name: 'Naukri', available: true, status: 'Available' },
+        { id: 'L', name: 'Linkedin', available: false, status: 'Coming Soon' },
+        { id: 'I', name: 'Indeed', available: false, status: 'Coming Soon' },
+        { id: 'M', name: 'Monster', available: false, status: 'Coming Soon' }
+    ];
 
     // Fetch all job configs when component mounts
     useEffect(() => {
         fetchConfigs();
     }, []);
 
-    // Fetch all job configs
+    // Fetch all job configurations
     const fetchConfigs = async () => {
         try {
             setLoading(true);
@@ -71,7 +95,7 @@ const AutoJobApplication = () => {
                 }
             }
         } catch (error) {
-            toast.error('Failed to fetch configurations: ' + (error.response?.data?.message || error.message));
+            console.error('Failed to fetch configurations:', error);
         } finally {
             setLoading(false);
         }
@@ -79,10 +103,8 @@ const AutoJobApplication = () => {
 
     // Load config data to form
     const loadConfigToForm = (config) => {
-        // Set form fields based on config data
-        setNaukriEnabled(config.isActive);
         setConfigName(config.name);
-        setActiveProvider(config.portal || 'naukri');
+        setIsActive(config.isActive);
 
         // Search config
         if (config.searchConfig) {
@@ -91,32 +113,24 @@ const AutoJobApplication = () => {
             setJobExperience(config.searchConfig.experience || 2);
         }
 
-        // Filter config
-        if (config.filterConfig) {
-            setMinRating(config.filterConfig.minRating || 3.5);
-            setRequiredSkills(config.filterConfig.requiredSkills || []);
-        }
-
-        // Schedule config
+        // Schedule settings
         if (config.schedule) {
             setApplyFrequency(config.schedule.frequency || 'daily');
             setApplyDays(config.schedule.days || [1, 2, 3, 4, 5]);
+            setApplyTime(config.schedule.time || '09:00');
         }
 
-        // For now, we have to get credentials separately as they're stored in a different collection
-        fetchCredentials(config.portal || 'naukri');
+        // Fetch credentials for this config
+        fetchCredentials('naukri');
     };
 
-    // Fetch credentials
+    // Fetch credentials for a portal
     const fetchCredentials = async (portal) => {
         try {
             const token = localStorage.getItem('token');
 
-            if (!token) {
-                return;
-            }
+            if (!token) return;
 
-            // This endpoint would need to be implemented on the backend
             const response = await axios.get(`${API_URL}/portal-credentials/${portal}`, {
                 headers: {
                     Authorization: `Bearer ${token}`
@@ -124,26 +138,94 @@ const AutoJobApplication = () => {
             });
 
             if (response.data.success && response.data.credential) {
-                setNaukriEmail(response.data.credential.username || '');
-                // Password won't be returned for security reasons
-                setNaukriPassword('');
+                setUsername(response.data.credential.username || '');
+                setCredentialsSaved(true);
+                // Password won't be returned for security
+                setPassword('');
             }
         } catch (error) {
-            // If credentials don't exist yet, that's okay - just leave the fields empty
-            if (error.response && error.response.status !== 404) {
-                toast.error('Failed to fetch credentials: ' + (error.response?.data?.message || error.message));
+            // If no credentials found, that's okay
+            if (error.response && error.response.status === 404) {
+                setCredentialsSaved(false);
             }
         }
     };
 
-    const togglePasswordVisibility = () => {
-        setPasswordVisible(!passwordVisible);
+    // Save credentials
+    const saveCredentials = async () => {
+        try {
+            setLoading(true);
+            const token = localStorage.getItem('token');
+
+            if (!token) {
+                toast.error('You must be logged in to save credentials');
+                return;
+            }
+
+            if (!username) {
+                toast.error('Username is required');
+                return;
+            }
+
+            // Only require password for new credentials
+            if (!credentialsSaved && !password) {
+                toast.error('Password is required');
+                return;
+            }
+
+            const credentialData = {
+                portal: 'naukri',
+                username: username,
+                password: password || undefined // Only send if provided
+            };
+
+            const response = await axios.post(`${API_URL}/portal-credentials`, credentialData, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            if (response.data.success) {
+                setCredentialsSaved(true);
+                setPassword(''); // Clear password for security
+                toast.success('Credentials saved successfully');
+            }
+        } catch (error) {
+            toast.error('Failed to save credentials: ' + (error.response?.data?.message || error.message));
+        } finally {
+            setLoading(false);
+        }
     };
 
-    // Save configuration and credentials
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    // Verify credentials
+    const verifyConnection = async () => {
+        try {
+            setLoading(true);
+            const token = localStorage.getItem('token');
 
+            if (!token) {
+                toast.error('You must be logged in to verify credentials');
+                return;
+            }
+
+            const response = await axios.post(`${API_URL}/portal-credentials/naukri/verify`, {}, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            if (response.data.success) {
+                toast.success('Connection verified successfully');
+            }
+        } catch (error) {
+            toast.error('Failed to verify connection: ' + (error.response?.data?.message || error.message));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Save configuration
+    const saveConfig = async () => {
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
@@ -153,11 +235,17 @@ const AutoJobApplication = () => {
                 return;
             }
 
+            // Validate required fields
+            if (!configName || !jobKeywords || !jobLocation) {
+                toast.error('Name, job keywords, and location are required');
+                return;
+            }
+
             // Prepare the config data
             const configData = {
                 name: configName,
-                isActive: naukriEnabled,
-                portal: activeProvider,
+                isActive: isActive,
+                portal: 'naukri',
                 keywords: jobKeywords,
                 experience: jobExperience.toString(),
                 location: jobLocation,
@@ -165,12 +253,12 @@ const AutoJobApplication = () => {
                 requiredSkills: jobKeywords.split(',').map(skill => skill.trim()),
                 frequency: applyFrequency,
                 days: applyDays,
-                time: '09:00' // Default to 9 AM
+                time: applyTime
             };
 
             let response;
 
-            // If we have a current config ID, update it; otherwise, create a new one
+            // Update or create configuration
             if (currentConfigId) {
                 response = await axios.put(`${API_URL}/job-config/${currentConfigId}`, configData, {
                     headers: {
@@ -194,28 +282,7 @@ const AutoJobApplication = () => {
                 }
             }
 
-            // If we have email and password, save credentials
-            if (naukriEmail && naukriPassword) {
-                const credentialData = {
-                    portal: activeProvider,
-                    username: naukriEmail,
-                    password: naukriPassword
-                };
-
-                const credResponse = await axios.post(`${API_URL}/portal-credentials`, credentialData, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                });
-
-                if (credResponse.data.success) {
-                    toast.success('Credentials saved successfully');
-                    // Clear password from the form for security
-                    setNaukriPassword('');
-                }
-            }
-
-            // Refresh the list of configs
+            // Refresh configurations
             fetchConfigs();
 
         } catch (error) {
@@ -225,81 +292,14 @@ const AutoJobApplication = () => {
         }
     };
 
-    // Handle disabling the service
-    const handleDisableService = async () => {
-        if (window.confirm('Are you sure you want to disable this service? Remember to change your password after disabling for maximum security.')) {
-            try {
-                setLoading(true);
-                const token = localStorage.getItem('token');
-
-                if (!token || !currentConfigId) {
-                    toast.error('You must be logged in and have an active configuration to disable the service');
-                    return;
-                }
-
-                const response = await axios.patch(`${API_URL}/job-config/${currentConfigId}/toggle`, {}, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                });
-
-                if (response.data.success) {
-                    setNaukriEnabled(false);
-                    toast.success('Service disabled successfully. For security, we recommend changing your password on Naukri.');
-
-                    // Refresh the list of configs
-                    fetchConfigs();
-                }
-
-            } catch (error) {
-                toast.error('Failed to disable service: ' + (error.response?.data?.message || error.message));
-            } finally {
-                setLoading(false);
-            }
-        }
-    };
-
-    // Handle creating a new configuration
-    const handleNewConfig = () => {
-        // Reset the form
-        setCurrentConfigId(null);
-        setConfigName('New Configuration');
-        setNaukriEnabled(false);
-        setNaukriEmail('');
-        setNaukriPassword('');
-        setJobKeywords('');
-        setJobLocation('');
-        setJobExperience(2);
-        setJobSortBy('Date');
-        setApplyFrequency('daily');
-        setApplyDays([1, 2, 3, 4, 5]);
-        setMaxApplications(10);
-        setMinRating(3.5);
-        setRequiredSkills([]);
-    };
-
-    // Handle selecting a configuration
-    const handleSelectConfig = (configId) => {
-        const selectedConfig = configs.find(config => config.id === configId);
-        if (selectedConfig) {
-            setCurrentConfigId(configId);
-            loadConfigToForm(selectedConfig);
-        }
-    };
-
-    // Handle running a job config manually
-    const handleRunConfig = async () => {
-        if (!currentConfigId) {
-            toast.error('You must have an active configuration to run it');
-            return;
-        }
-
+    // Run job now
+    const runNow = async () => {
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
 
-            if (!token) {
-                toast.error('You must be logged in to run configurations');
+            if (!token || !currentConfigId) {
+                toast.error('You must have a saved configuration to run it');
                 return;
             }
 
@@ -312,7 +312,6 @@ const AutoJobApplication = () => {
             if (response.data.success) {
                 toast.success('Job execution triggered successfully');
             }
-
         } catch (error) {
             toast.error('Failed to run job: ' + (error.response?.data?.message || error.message));
         } finally {
@@ -321,389 +320,523 @@ const AutoJobApplication = () => {
     };
 
     return (
-        <div className="auto-job-application">
-            <div className="page-header">
-                <h1>Auto Job Application</h1>
-                <p>Configure automatic job application services across multiple platforms</p>
-            </div>
-
-            <div className="alert alert-warning">
-                <div className="alert-icon">⚠️</div>
-                <div className="alert-content">
-                    <strong>Security Notice:</strong> For your protection, please use a dedicated email account that is not linked to banking or other sensitive services. Credentials are encrypted during transmission and not stored in plain text. When you disable a service, we recommend changing your password on that platform.
-                </div>
-            </div>
-
-            {configs.length > 0 && (
-                <div className="config-selector">
-                    <div className="config-selector-header">
-                        <h3>Your Configurations</h3>
-                        <button
-                            className="btn btn-sm btn-outline"
-                            onClick={handleNewConfig}
-                            disabled={loading}
-                        >
-                            + New Config
+        <div className="job-automation-container">
+            <div className="job-automation-header">
+                <h1>Job Automation</h1>
+                <div className="config-header">
+                    <input
+                        type="text"
+                        className="config-name-input"
+                        value={configName}
+                        onChange={(e) => setConfigName(e.target.value)}
+                        placeholder="Configuration Name"
+                    />
+                    <div className="config-actions">
+                        <label className="switch">
+                            <input
+                                type="checkbox"
+                                checked={isActive}
+                                onChange={() => setIsActive(!isActive)}
+                            />
+                            <span className="slider round"></span>
+                        </label>
+                        <span className="status-label">{isActive ? 'Active' : 'Inactive'}</span>
+                        <button className="btn-outline" onClick={runNow}>
+                            <PlayCircle size={18} />
+                            Run Now
+                        </button>
+                        <button className="btn-primary" onClick={saveConfig}>
+                            <Save size={18} />
+                            Save
                         </button>
                     </div>
-                    <div className="config-list">
-                        {configs.map(config => (
-                            <div
-                                key={config.id}
-                                className={`config-item ${currentConfigId === config.id ? 'active' : ''}`}
-                                onClick={() => handleSelectConfig(config.id)}
-                            >
-                                <div className="config-item-name">{config.name}</div>
-                                <div className={`config-item-status ${config.isActive ? 'active' : 'inactive'}`}>
-                                    {config.isActive ? 'Active' : 'Inactive'}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            <div className="job-platforms">
-                <div className={`platform-card ${activeProvider === 'naukri' ? 'active' : ''}`} onClick={() => setActiveProvider('naukri')}>
-                    <div className="platform-icon">🇮🇳</div>
-                    <div className="platform-info">
-                        <h3>Naukri</h3>
-                        <div className="platform-status">Available</div>
-                    </div>
-                </div>
-
-                <div className="platform-card disabled" onClick={() => alert('Coming soon!')}>
-                    <div className="platform-icon">🔗</div>
-                    <div className="platform-info">
-                        <h3>LinkedIn</h3>
-                        <div className="platform-status coming-soon">Coming Soon</div>
-                    </div>
-                </div>
-
-                <div className="platform-card disabled" onClick={() => alert('Coming soon!')}>
-                    <div className="platform-icon">🌐</div>
-                    <div className="platform-info">
-                        <h3>Indeed</h3>
-                        <div className="platform-status coming-soon">Coming Soon</div>
-                    </div>
-                </div>
-
-                <div className="platform-card disabled" onClick={() => alert('Coming soon!')}>
-                    <div className="platform-icon">👾</div>
-                    <div className="platform-info">
-                        <h3>Monster</h3>
-                        <div className="platform-status coming-soon">Coming Soon</div>
-                    </div>
                 </div>
             </div>
 
-            {activeProvider === 'naukri' ? (
-                <div className="config-container">
-                    <div className="config-header">
-                        <div className="config-title">
-                            <input
-                                type="text"
-                                className="config-name-input"
-                                value={configName}
-                                onChange={(e) => setConfigName(e.target.value)}
-                                placeholder="Configuration Name"
-                                disabled={loading}
-                            />
-                            <p>Set up automatic job applications on Naukri</p>
-                        </div>
-                        <div className="service-toggle">
-                            <span>{naukriEnabled ? 'Enabled' : 'Disabled'}</span>
-                            <label className="switch">
-                                <input
-                                    type="checkbox"
-                                    checked={naukriEnabled}
-                                    onChange={() => setNaukriEnabled(!naukriEnabled)}
-                                    disabled={loading}
-                                />
-                                <span className="slider round"></span>
-                            </label>
-                        </div>
-                    </div>
+            <div className="tab-navigation">
+                <button
+                    className={`tab-item ${activeTab === 'portals' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('portals')}
+                >
+                    <Briefcase size={18} />
+                    Job Portals
+                </button>
+                <button
+                    className={`tab-item ${activeTab === 'criteria' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('criteria')}
+                >
+                    <Settings size={18} />
+                    Search Criteria
+                </button>
+                <button
+                    className={`tab-item ${activeTab === 'resume' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('resume')}
+                >
+                    <FileText size={18} />
+                    Resume Update
+                </button>
+                <button
+                    className={`tab-item ${activeTab === 'schedule' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('schedule')}
+                >
+                    <Calendar size={18} />
+                    Schedule
+                </button>
+                <button
+                    className={`tab-item ${activeTab === 'notifications' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('notifications')}
+                >
+                    <Bell size={18} />
+                    Notifications
+                </button>
+            </div>
 
-                    <form onSubmit={handleSubmit}>
-                        <div className="config-sections">
-                            <div className="config-section">
-                                <h3>Account Settings</h3>
+            <div className="tab-content">
+                {activeTab === 'portals' && (
+                    <div className="content-panel">
+                        <h2>Job Portal Credentials</h2>
+                        <p>Configure your job portal accounts to enable automated job applications</p>
+
+                        <div className="portal-selector">
+                            {portalData.map(portal => (
+                                <div
+                                    key={portal.id}
+                                    className={`portal-option ${portal.id === 'N' ? 'active' : ''} ${!portal.available ? 'disabled' : ''}`}
+                                >
+                                    <div className="portal-letter">{portal.id}</div>
+                                    <div className="portal-info">
+                                        <div className="portal-name">{portal.name}</div>
+                                        <div className={`portal-status ${portal.available ? 'available' : 'soon'}`}>
+                                            {portal.status}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="credential-form">
+                            <div className="form-row">
                                 <div className="form-group">
-                                    <label htmlFor="naukri-email">Naukri Email</label>
+                                    <label>
+                                        <User size={18} />
+                                        Username / Email
+                                    </label>
                                     <input
-                                        type="email"
-                                        id="naukri-email"
-                                        placeholder="Enter your Naukri account email"
-                                        value={naukriEmail}
-                                        onChange={(e) => setNaukriEmail(e.target.value)}
-                                        disabled={loading}
-                                        required
+                                        type="text"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
+                                        placeholder="Enter your Naukri email"
                                     />
                                 </div>
 
                                 <div className="form-group">
-                                    <label htmlFor="naukri-password">Naukri Password</label>
+                                    <label>
+                                        <Lock size={18} />
+                                        Password
+                                    </label>
                                     <div className="password-field">
                                         <input
-                                            type={passwordVisible ? "text" : "password"}
-                                            id="naukri-password"
-                                            placeholder={currentConfigId ? "Enter to update password" : "Enter your Naukri account password"}
-                                            value={naukriPassword}
-                                            onChange={(e) => setNaukriPassword(e.target.value)}
-                                            disabled={loading}
-                                            required={!currentConfigId} // Only required for new configs
+                                            type={showPassword ? "text" : "password"}
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            placeholder={credentialsSaved ? "Enter new password only if you want to change it" : "Enter your Naukri password"}
                                         />
                                         <button
                                             type="button"
                                             className="password-toggle"
-                                            onClick={togglePasswordVisibility}
-                                            disabled={loading}
+                                            onClick={() => setShowPassword(!showPassword)}
                                         >
-                                            {passwordVisible ? "Hide" : "Show"}
+                                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                         </button>
                                     </div>
-                                    <div className="field-note">Password is encrypted during transmission</div>
-                                </div>
-
-                                <div className="form-group">
-                                    <div className="notification-options">
-                                        <h4>Notification Preferences</h4>
-                                        <div className="checkbox-group">
-                                            <label className="checkbox-container">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={emailNotify}
-                                                    onChange={() => setEmailNotify(!emailNotify)}
-                                                    disabled={loading}
-                                                />
-                                                <span className="checkmark"></span>
-                                                <span>Email Notifications</span>
-                                            </label>
-                                        </div>
-
-                                        <div className="checkbox-group">
-                                            <label className="checkbox-container">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={whatsappNotify}
-                                                    onChange={() => setWhatsappNotify(!whatsappNotify)}
-                                                    disabled={loading}
-                                                />
-                                                <span className="checkmark"></span>
-                                                <span>WhatsApp Notifications</span>
-                                            </label>
-                                        </div>
-
-                                        {whatsappNotify && (
-                                            <div className="form-group whatsapp-number">
-                                                <label htmlFor="whatsapp-number">WhatsApp Number</label>
-                                                <input
-                                                    type="tel"
-                                                    id="whatsapp-number"
-                                                    placeholder="e.g. 919730989996"
-                                                    value={whatsappNumber}
-                                                    onChange={(e) => setWhatsappNumber(e.target.value)}
-                                                    disabled={loading}
-                                                    required={whatsappNotify}
-                                                />
-                                                <div className="field-note">Include country code (e.g. 91 for India)</div>
-                                            </div>
-                                        )}
-                                    </div>
+                                    <div className="field-hint">Enter new password only if you want to change it</div>
                                 </div>
                             </div>
 
-                            <div className="config-section">
-                                <h3>Job Search Criteria</h3>
-                                <div className="form-group">
-                                    <label htmlFor="job-keywords">Job Keywords</label>
-                                    <input
-                                        type="text"
-                                        id="job-keywords"
-                                        placeholder="e.g. node,react,javascript"
-                                        value={jobKeywords}
-                                        onChange={(e) => setJobKeywords(e.target.value)}
-                                        disabled={loading}
-                                        required
-                                    />
-                                    <div className="field-note">Separate multiple keywords with commas</div>
+                            <div className="button-group">
+                                <button className="btn-primary" onClick={saveCredentials}>
+                                    <Save size={18} />
+                                    Save Credentials
+                                </button>
+                                <button className="btn-outline" onClick={verifyConnection}>
+                                    <RotateCw size={18} />
+                                    Verify Connection
+                                </button>
+                            </div>
+
+                            {credentialsSaved && (
+                                <div className="success-message">
+                                    <CheckCircle size={18} />
+                                    Naukri credentials saved
                                 </div>
+                            )}
 
+                            <div className="security-message">
+                                <AlertCircle size={18} />
+                                <p>For security reasons, use a dedicated email that isn't linked to sensitive accounts. Passwords are encrypted during transmission and storage.</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'criteria' && (
+                    <div className="content-panel">
+                        <h2>Search Criteria</h2>
+                        <p>Define what jobs you're looking for and your preferences</p>
+
+                        <div className="search-criteria-form">
+                            <div className="form-group">
+                                <label>Job Keywords</label>
+                                <input
+                                    type="text"
+                                    value={jobKeywords}
+                                    onChange={(e) => setJobKeywords(e.target.value)}
+                                    placeholder="e.g. javascript,react,node"
+                                />
+                                <div className="field-hint">Separate multiple keywords with commas</div>
+                            </div>
+
+                            <div className="form-group">
+                                <label>Job Location</label>
+                                <input
+                                    type="text"
+                                    value={jobLocation}
+                                    onChange={(e) => setJobLocation(e.target.value)}
+                                    placeholder="e.g. Bangalore, Remote"
+                                />
+                            </div>
+
+                            <div className="form-row">
                                 <div className="form-group">
-                                    <label htmlFor="job-location">Preferred Location</label>
-                                    <input
-                                        type="text"
-                                        id="job-location"
-                                        placeholder="e.g. Pune, Mumbai"
-                                        value={jobLocation}
-                                        onChange={(e) => setJobLocation(e.target.value)}
-                                        disabled={loading}
-                                        required
-                                    />
-                                </div>
-
-                                <div className="form-row">
-                                    <div className="form-group">
-                                        <label htmlFor="job-type">Job Type</label>
-                                        <select
-                                            id="job-type"
-                                            value={jobType}
-                                            onChange={(e) => setJobType(e.target.value)}
-                                            disabled={loading}
-                                        >
-                                            <option value="fulltime">Full Time</option>
-                                            <option value="parttime">Part Time</option>
-                                            <option value="contract">Contract</option>
-                                            <option value="remote">Remote</option>
-                                        </select>
-                                    </div>
-
-                                    <div className="form-group">
-                                        <label htmlFor="job-experience">Experience (years)</label>
-                                        <input
-                                            type="number"
-                                            id="job-experience"
-                                            min="0"
-                                            max="30"
-                                            value={jobExperience}
-                                            onChange={(e) => setJobExperience(e.target.value)}
-                                            disabled={loading}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="form-group">
-                                    <label htmlFor="min-rating">Minimum Company Rating</label>
+                                    <label>Experience (years)</label>
                                     <input
                                         type="number"
-                                        id="min-rating"
-                                        min="1"
-                                        max="5"
-                                        step="0.1"
-                                        value={minRating}
-                                        onChange={(e) => setMinRating(e.target.value)}
-                                        disabled={loading}
+                                        min="0"
+                                        max="30"
+                                        value={jobExperience}
+                                        onChange={(e) => setJobExperience(e.target.value)}
                                     />
-                                    <div className="field-note">Only apply to companies with rating ≥ this value</div>
                                 </div>
 
                                 <div className="form-group">
-                                    <label htmlFor="job-sort">Sort Jobs By</label>
+                                    <label>Job Type</label>
                                     <select
-                                        id="job-sort"
-                                        value={jobSortBy}
-                                        onChange={(e) => setJobSortBy(e.target.value)}
-                                        disabled={loading}
+                                        value={jobType}
+                                        onChange={(e) => setJobType(e.target.value)}
                                     >
-                                        <option value="Date">Date</option>
-                                        <option value="Relevance">Relevance</option>
-                                        <option value="Recommended">Recommended</option>
+                                        <option value="fulltime">Full Time</option>
+                                        <option value="parttime">Part Time</option>
+                                        <option value="contract">Contract</option>
+                                        <option value="remote">Remote</option>
                                     </select>
                                 </div>
+                            </div>
 
-                                <h3 className="section-divider">Application Settings</h3>
-                                <div className="form-row">
-                                    <div className="form-group">
-                                        <label htmlFor="apply-frequency">Application Frequency</label>
-                                        <select
-                                            id="apply-frequency"
-                                            value={applyFrequency}
-                                            onChange={(e) => setApplyFrequency(e.target.value)}
-                                            disabled={loading}
-                                        >
-                                            <option value="daily">Daily</option>
-                                            <option value="weekly">Weekly</option>
-                                            <option value="custom">Custom</option>
-                                        </select>
-                                    </div>
+                            <div className="form-group">
+                                <label>Minimum Company Rating: {minRating}</label>
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max="5"
+                                    step="0.1"
+                                    value={minRating}
+                                    onChange={(e) => setMinRating(e.target.value)}
+                                />
+                                <div className="field-hint">Only apply to companies with ratings at or above this value</div>
+                            </div>
 
-                                    <div className="form-group">
-                                        <label htmlFor="max-applications">Maximum Applications</label>
-                                        <input
-                                            type="number"
-                                            id="max-applications"
-                                            min="1"
-                                            max="50"
-                                            value={maxApplications}
-                                            onChange={(e) => setMaxApplications(e.target.value)}
-                                            disabled={loading}
-                                        />
-                                        <div className="field-note">Maximum jobs to apply for in each cycle</div>
-                                    </div>
-                                </div>
-
-                                {(applyFrequency === 'weekly' || applyFrequency === 'custom') && (
-                                    <div className="form-group">
-                                        <label>Apply on Days</label>
-                                        <div className="day-selector">
-                                            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, index) => (
-                                                <div key={index} className="day-option">
-                                                    <input
-                                                        type="checkbox"
-                                                        id={`day-${index}`}
-                                                        checked={applyDays.includes(index)}
-                                                        onChange={() => {
-                                                            if (applyDays.includes(index)) {
-                                                                setApplyDays(applyDays.filter(d => d !== index));
-                                                            } else {
-                                                                setApplyDays([...applyDays, index].sort());
-                                                            }
-                                                        }}
-                                                        disabled={loading}
-                                                    />
-                                                    <label htmlFor={`day-${index}`}>{day}</label>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
+                            <div className="form-group">
+                                <label>Maximum Applications Per Run: {maxApplications}</label>
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max="50"
+                                    value={maxApplications}
+                                    onChange={(e) => setMaxApplications(e.target.value)}
+                                />
+                                <div className="field-hint">Limit how many applications to submit each time</div>
                             </div>
                         </div>
+                    </div>
+                )}
 
-                        <div className="form-actions">
-                            {loading ? (
-                                <div className="loading-spinner">Loading...</div>
-                            ) : (
-                                <>
-                                    <button type="submit" className="btn btn-primary">
-                                        {currentConfigId ? 'Update Configuration' : 'Save Configuration'}
-                                    </button>
+                {activeTab === 'resume' && (
+                    <div className="content-panel">
+                        <h2>Resume Optimization</h2>
+                        <p>Configure how your resume should be optimized for each job application</p>
 
-                                    {currentConfigId && (
-                                        <>
-                                            <button
-                                                type="button"
-                                                className="btn btn-success"
-                                                onClick={handleRunConfig}
-                                            >
-                                                Run Now
-                                            </button>
+                        <div className="resume-settings">
+                            <div className="toggle-setting">
+                                <div>
+                                    <h3>Auto-Update Resume</h3>
+                                    <p>Automatically optimize your resume for each job application</p>
+                                </div>
+                                <label className="switch">
+                                    <input
+                                        type="checkbox"
+                                        checked={autoUpdateResume}
+                                        onChange={() => setAutoUpdateResume(!autoUpdateResume)}
+                                    />
+                                    <span className="slider round"></span>
+                                </label>
+                            </div>
 
-                                            {naukriEnabled && (
-                                                <button
-                                                    type="button"
-                                                    className="btn btn-danger"
-                                                    onClick={handleDisableService}
-                                                >
-                                                    Disable Service
-                                                </button>
-                                            )}
-                                        </>
-                                    )}
-                                </>
+                            {autoUpdateResume && (
+                                <div className="resume-options">
+                                    <div className="option-card">
+                                        <div className="checkbox-item">
+                                            <input
+                                                type="checkbox"
+                                                id="optimize-keywords"
+                                                checked={optimizeKeywords}
+                                                onChange={() => setOptimizeKeywords(!optimizeKeywords)}
+                                            />
+                                            <label htmlFor="optimize-keywords">
+                                                <div className="checkbox-title">Optimize for Keywords</div>
+                                                <div className="checkbox-description">Analyze job descriptions and highlight matching skills and experiences</div>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div className="resume-uploader">
+                                        <h3>Upload Base Resume</h3>
+                                        <p>Upload your current resume to use as the foundation for optimizations</p>
+                                        <button className="btn-outline">
+                                            <FileText size={18} />
+                                            Upload Resume
+                                        </button>
+                                    </div>
+                                </div>
                             )}
                         </div>
-                    </form>
+                    </div>
+                )}
+
+                {activeTab === 'schedule' && (
+                    <div className="content-panel">
+                        <h2>Application Schedule</h2>
+                        <p>Configure when the automated job applications should run</p>
+
+                        <div className="schedule-settings">
+                            <div className="form-group">
+                                <label>Application Frequency</label>
+                                <div className="radio-group">
+                                    <label className="radio-item">
+                                        <input
+                                            type="radio"
+                                            name="frequency"
+                                            value="daily"
+                                            checked={applyFrequency === 'daily'}
+                                            onChange={() => setApplyFrequency('daily')}
+                                        />
+                                        <span>Daily</span>
+                                    </label>
+
+                                    <label className="radio-item">
+                                        <input
+                                            type="radio"
+                                            name="frequency"
+                                            value="weekly"
+                                            checked={applyFrequency === 'weekly'}
+                                            onChange={() => setApplyFrequency('weekly')}
+                                        />
+                                        <span>Weekly</span>
+                                    </label>
+
+                                    <label className="radio-item">
+                                        <input
+                                            type="radio"
+                                            name="frequency"
+                                            value="custom"
+                                            checked={applyFrequency === 'custom'}
+                                            onChange={() => setApplyFrequency('custom')}
+                                        />
+                                        <span>Custom</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            {(applyFrequency === 'weekly' || applyFrequency === 'custom') && (
+                                <div className="form-group">
+                                    <label>Run on these days</label>
+                                    <div className="day-selector">
+                                        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => (
+                                            <div
+                                                key={index}
+                                                className={`day-item ${applyDays.includes(index) ? 'selected' : ''}`}
+                                                onClick={() => {
+                                                    if (applyDays.includes(index)) {
+                                                        setApplyDays(applyDays.filter(d => d !== index));
+                                                    } else {
+                                                        setApplyDays([...applyDays, index].sort());
+                                                    }
+                                                }}
+                                            >
+                                                {day}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="form-group">
+                                <label>Run Time</label>
+                                <input
+                                    type="time"
+                                    value={applyTime}
+                                    onChange={(e) => setApplyTime(e.target.value)}
+                                />
+                                <div className="field-hint">When to run the automation each day (24-hour format)</div>
+                            </div>
+
+                            <div className="next-run-card">
+                                <div>
+                                    <h3>Next Scheduled Run</h3>
+                                    <p className="next-run-time">
+                                        {(() => {
+                                            // Calculate next run based on current settings
+                                            const now = new Date();
+                                            const [hours, minutes] = applyTime.split(':').map(Number);
+
+                                            let nextRun = new Date();
+                                            nextRun.setHours(hours, minutes, 0, 0);
+
+                                            if (nextRun <= now) {
+                                                nextRun.setDate(nextRun.getDate() + 1);
+                                            }
+
+                                            if (applyFrequency === 'weekly' || applyFrequency === 'custom') {
+                                                if (applyDays.length > 0) {
+                                                    const currentDay = now.getDay();
+                                                    let daysUntilNext = 7;
+
+                                                    for (const day of applyDays) {
+                                                        const daysUntil = (day - currentDay + 7) % 7;
+                                                        if (daysUntil < daysUntilNext && (daysUntil > 0 || (daysUntil === 0 && nextRun > now))) {
+                                                            daysUntilNext = daysUntil;
+                                                        }
+                                                    }
+
+                                                    nextRun = new Date(now);
+                                                    nextRun.setDate(now.getDate() + daysUntilNext);
+                                                    nextRun.setHours(hours, minutes, 0, 0);
+                                                } else {
+                                                    return "No days selected";
+                                                }
+                                            }
+
+                                            return nextRun.toLocaleString();
+                                        })()}
+                                    </p>
+                                </div>
+                                <button className="btn-primary" onClick={runNow}>
+                                    <PlayCircle size={18} />
+                                    Run Now
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'notifications' && (
+                    <div className="content-panel">
+                        <h2>Notification Settings</h2>
+                        <p>Configure how you want to be notified about job applications</p>
+
+                        <div className="notification-settings">
+                            <div className="toggle-setting">
+                                <div>
+                                    <h3>Email Notifications</h3>
+                                    <p>Receive email notifications for application status updates</p>
+                                </div>
+                                <label className="switch">
+                                    <input
+                                        type="checkbox"
+                                        checked={true}
+                                    />
+                                    <span className="slider round"></span>
+                                </label>
+                            </div>
+
+                            <div className="toggle-setting">
+                                <div>
+                                    <h3>WhatsApp Notifications</h3>
+                                    <p>Receive WhatsApp notifications for application status updates</p>
+                                </div>
+                                <label className="switch">
+                                    <input
+                                        type="checkbox"
+                                        checked={false}
+                                    />
+                                    <span className="slider round"></span>
+                                </label>
+                            </div>
+
+                            <div className="notification-types">
+                                <h3>Notify me about:</h3>
+
+                                <div className="checkbox-group">
+                                    <div className="checkbox-item">
+                                        <input
+                                            type="checkbox"
+                                            id="notify-applied"
+                                            checked={true}
+                                        />
+                                        <label htmlFor="notify-applied">
+                                            <div className="checkbox-title">Successful Applications</div>
+                                            <div className="checkbox-description">When your profile is successfully submitted to a job</div>
+                                        </label>
+                                    </div>
+
+                                    <div className="checkbox-item">
+                                        <input
+                                            type="checkbox"
+                                            id="notify-interview"
+                                            checked={true}
+                                        />
+                                        <label htmlFor="notify-interview">
+                                            <div className="checkbox-title">Interview Invitations</div>
+                                            <div className="checkbox-description">When you receive an interview request</div>
+                                        </label>
+                                    </div>
+
+                                    <div className="checkbox-item">
+                                        <input
+                                            type="checkbox"
+                                            id="notify-errors"
+                                            checked={true}
+                                        />
+                                        <label htmlFor="notify-errors">
+                                            <div className="checkbox-title">Errors & Issues</div>
+                                            <div className="checkbox-description">When there are problems with the automation</div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+
+            <div className="configs-panel">
+                <div className="configs-header">
+                    <h3>My Configurations</h3>
+                    <button className="btn-icon">
+                        <PlusCircle size={18} />
+                    </button>
                 </div>
-            ) : (
-                <div className="coming-soon-container">
-                    <div className="coming-soon-icon">🔜</div>
-                    <h2>Coming Soon!</h2>
-                    <p>We're working on integrating with {activeProvider.charAt(0).toUpperCase() + activeProvider.slice(1)}. Check back later for updates.</p>
-                    <button className="btn btn-outline">Get Notified When Available</button>
+
+                <div className="configs-list">
+                    <div className="config-item active">
+                        <span className="config-name">My Naukri Config</span>
+                        <span className="config-status inactive">Inactive</span>
+                    </div>
+                    <div className="config-item">
+                        <span className="config-name">New Configuration</span>
+                        <span className="config-status inactive">Inactive</span>
+                    </div>
                 </div>
-            )}
+            </div>
         </div>
     );
 };
