@@ -12,6 +12,10 @@ import config from '../../config/config.js';
 import routes from './routes/routes.js';
 import userRoutes from './routes/userRoutes.js';
 import userModelPlugin from './plugins/userModelPlugin.js';
+import jobConfigPlugin from './plugins/jobConfigPlugin.js';
+import jobConfigRoutes from './routes/jobConfigRoutes.js';
+import portalCredentialPlugin from './plugins/portalCredentialPlugin.js';
+import portalCredentialRoutes from './routes/portalCredentialRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -49,6 +53,9 @@ await fastify.register(fastifyMongo, {
 
 // Register plugins 
 fastify.register(userModelPlugin);
+fastify.register(jobConfigPlugin);
+fastify.register(portalCredentialPlugin);
+
 
 // Register JWT plugin for authentication
 await fastify.register(import('@fastify/jwt'), {
@@ -97,6 +104,10 @@ await fastify.register(routes, { prefix: '/api' });
 
 // Register auth routes
 await fastify.register(userRoutes, { prefix: '/api' });
+await fastify.register(jobConfigRoutes);
+await fastify.register(portalCredentialRoutes);
+// 
+
 
 // Start the server
 const start = async () => {
