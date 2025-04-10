@@ -1,62 +1,57 @@
-/**
- * Centralized logger utility using pino
- */
-import pino from 'pino';
+// utils/logger.js
+import winston from 'winston';
 import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
 
-// Get current directory (equivalent to __dirname in CommonJS)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Ensure logs directory exists
-const logsDir = path.join(__dirname, '../../logs');
+// Create logs directory if it doesn't exist
+const logsDir = path.join(process.cwd(), 'logs');
 if (!fs.existsSync(logsDir)) {
-    fs.mkdirSync(logsDir, { recursive: true });
+    fs.mkdirSync(logsDir);
 }
 
-// Define log file paths
-const logFilePath = path.join(logsDir, 'app.log');
-const errorLogFilePath = path.join(logsDir, 'error.log');
-
-// Create log file streams
-const logFileStream = fs.createWriteStream(logFilePath, { flags: 'a' });
-const errorLogFileStream = fs.createWriteStream(errorLogFilePath, { flags: 'a' });
-
-// Determine if we're in a development environment
-const isDevelopment = process.env.NODE_ENV !== 'production';
-
-// Configure pino logger
-const logger = pino({
-    level: process.env.LOG_LEVEL || (isDevelopment ? 'debug' : 'info'),
-    transport: isDevelopment ? {
-        target: 'pino-pretty',
-        options: {
-            colorize: true,
-            translateTime: 'SYS:standard',
-            ignore: 'pid,hostname'
+// Define logging format
+const logFormat = winston.format.combine(
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    winston.format.errors({ stack: true }),
+    winston.format.printf(({ level, message, timestamp, stack }) => {
+        if (stack) {
+            return `${timestamp} [${level.toUpperCase()}]: ${message}\n${stack}`;
         }
-    } : undefined
-}, pino.multistream([
-    // Log everything to standard output in development
-    { stream: process.stdout },
-    // Log everything to file
-    { stream: logFileStream },
-    // Log errors and above to error file
-    { stream: errorLogFileStream, level: 'error' }
-]));
+        return `${timestamp} [${level.toUpperCase()}]: ${message}`;
+    })
+);
 
-// Add a method to create child loggers with context
-logger.withContext = (context) => {
-    return logger.child(context);
-};
+// Create logger instance
+const logger = winston.createLogger({
+    level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+    format: logFormat,
+    defaultMeta: { service: 'job-automation' },
+    transports: [
+        // Console output
+        new winston.transports.Console({
+            format: winston.format.combine(
+                winston.format.colorize(),
+                logFormat
+            )
+        }),
 
-// Log startup info
-logger.info({
-    env: process.env.NODE_ENV || 'development',
-    logLevel: logger.level,
-    time: new Date().toISOString()
-}, 'Logger initialized');
+        // File output for errors
+        new winston.transports.File({
+            filename: path.join(logsDir, 'error.log'),
+            level: 'error'
+        }),
+
+        // File output for all logs
+        new winston.transports.File({
+            filename: path.join(logsDir, 'combined.log')
+        })
+    ],
+    // Handle exceptions
+    exceptionHandlers: [
+        new winston.transports.File({
+            filename: path.join(logsDir, 'exceptions.log')
+        })
+    ]
+});
 
 export default logger;

@@ -1,6 +1,4 @@
-/**
- * Authentication routes for the JobSuiteX system
- */
+// routes/authRoutes.js
 import { hash, compare } from 'bcrypt';
 import { OAuth2Client } from 'google-auth-library';
 import logger from '../../utils/logger.js';
@@ -29,8 +27,8 @@ export default async function authRoutes(fastify, options) {
                 });
             }
 
-            // Check if user already exists
-            const existingUser = await fastify.mongo.db.collection('users').findOne({ email });
+            // Check if user already exists using our user model
+            const existingUser = await fastify.userModel.findByEmail(email);
             if (existingUser) {
                 return reply.code(409).send({
                     error: 'Conflict',
@@ -42,36 +40,33 @@ export default async function authRoutes(fastify, options) {
             const saltRounds = 10;
             const hashedPassword = await hash(password, saltRounds);
 
-            // Create user record
-            const user = {
+            // Create user record with our user model
+            const userData = {
                 firstName,
                 lastName,
                 email,
                 password: hashedPassword,
-                createdAt: new Date(),
-                updatedAt: new Date(),
                 authProvider: 'local'
             };
 
-            // Save user to database
-            const result = await fastify.mongo.db.collection('users').insertOne(user);
+            const result = await fastify.userModel.create(userData);
 
             // Generate token
-            const userData = {
+            const tokenData = {
                 id: result.insertedId.toString(),
                 firstName,
                 lastName,
                 email
             };
 
-            const token = fastify.jwt.sign(userData);
+            const token = fastify.jwt.sign(tokenData);
 
             logger.info(`New user registered: ${email}`);
 
             return {
                 success: true,
                 message: 'User registered successfully',
-                user: userData,
+                user: tokenData,
                 token
             };
         } catch (error) {
@@ -96,8 +91,8 @@ export default async function authRoutes(fastify, options) {
                 });
             }
 
-            // Find user
-            const user = await fastify.mongo.db.collection('users').findOne({ email });
+            // Find user with our user model
+            const user = await fastify.userModel.findByEmail(email);
             if (!user) {
                 return reply.code(401).send({
                     error: 'Authentication Error',
@@ -121,6 +116,11 @@ export default async function authRoutes(fastify, options) {
                     message: 'Invalid email or password'
                 });
             }
+
+            // Update last login timestamp
+            await fastify.userModel.update(user._id.toString(), {
+                lastLogin: new Date()
+            });
 
             // Generate token
             const userData = {
@@ -171,7 +171,8 @@ export default async function authRoutes(fastify, options) {
             const { email, given_name, family_name, picture, sub } = payload;
 
             // Find if user already exists
-            let user = await fastify.mongo.db.collection('users').findOne({ email });
+            let user = await fastify.userModel.findByEmail(email);
+            let userData;
 
             if (!user) {
                 // Create new user if doesn't exist
@@ -181,46 +182,46 @@ export default async function authRoutes(fastify, options) {
                     email,
                     googleId: sub,
                     profilePicture: picture,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                    authProvider: 'google'
+                    authProvider: 'google',
+                    lastLogin: new Date()
                 };
 
-                const result = await fastify.mongo.db.collection('users').insertOne(newUser);
-                user = {
-                    _id: result.insertedId,
-                    ...newUser
+                const result = await fastify.userModel.create(newUser);
+                userData = {
+                    id: result.insertedId.toString(),
+                    firstName: given_name,
+                    lastName: family_name,
+                    email,
+                    picture
                 };
 
                 logger.info(`New user registered via Google: ${email}`);
             } else {
                 // Update existing user with Google info if needed
-                await fastify.mongo.db.collection('users').updateOne(
-                    { _id: user._id },
+                await fastify.userModel.update(
+                    user._id.toString(),
                     {
-                        $set: {
-                            googleId: sub,
-                            firstName: given_name || user.firstName,
-                            lastName: family_name || user.lastName,
-                            profilePicture: picture || user.profilePicture,
-                            updatedAt: new Date(),
-                            authProvider: 'google'
-                        }
+                        googleId: sub,
+                        firstName: given_name || user.firstName,
+                        lastName: family_name || user.lastName,
+                        profilePicture: picture || user.profilePicture,
+                        authProvider: 'google',
+                        lastLogin: new Date()
                     }
                 );
+
+                userData = {
+                    id: user._id.toString(),
+                    firstName: given_name || user.firstName,
+                    lastName: family_name || user.lastName,
+                    email,
+                    picture: picture || user.profilePicture
+                };
 
                 logger.info(`Existing user logged in via Google: ${email}`);
             }
 
             // Generate token
-            const userData = {
-                id: user._id.toString(),
-                firstName: given_name || user.firstName,
-                lastName: family_name || user.lastName,
-                email,
-                picture: picture || user.profilePicture
-            };
-
             const jwtToken = fastify.jwt.sign(userData);
 
             return {
@@ -243,10 +244,7 @@ export default async function authRoutes(fastify, options) {
         try {
             const userId = request.user.id;
 
-            const user = await fastify.mongo.db.collection('users').findOne(
-                { _id: fastify.mongo.ObjectId(userId) },
-                { projection: { password: 0 } } // Exclude password from result
-            );
+            const user = await fastify.userModel.findById(userId);
 
             if (!user) {
                 return reply.code(404).send({
@@ -264,7 +262,8 @@ export default async function authRoutes(fastify, options) {
                     email: user.email,
                     profilePicture: user.profilePicture,
                     authProvider: user.authProvider,
-                    createdAt: user.createdAt
+                    createdAt: user.createdAt,
+                    role: user.role || 'user'
                 }
             };
         } catch (error) {

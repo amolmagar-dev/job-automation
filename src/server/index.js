@@ -10,8 +10,8 @@ import dotenv from 'dotenv';
 import { Server as SocketIOServer } from 'socket.io';
 import config from '../../config/config.js';
 import routes from './routes/routes.js';
-import authRoutes from './routes/JobSuiteXAuth.js';
-import setupSocketHandlers from './socket.js';
+import userRoutes from './routes/userRoutes.js';
+import userModelPlugin from './plugins/userModelPlugin.js';
 
 // Load environment variables
 dotenv.config();
@@ -47,6 +47,9 @@ await fastify.register(fastifyMongo, {
     forceClose: true,
 });
 
+// Register plugins 
+fastify.register(userModelPlugin);
+
 // Register JWT plugin for authentication
 await fastify.register(import('@fastify/jwt'), {
     secret: process.env.JWT_SECRET || 'supersecretkey',
@@ -64,24 +67,24 @@ fastify.decorate('authenticate', async (request, reply) => {
     }
 });
 
-// Create MongoDB indexes when the connection is ready
-fastify.addHook('onReady', async () => {
-    try {
-        // Create a unique index on email field to prevent duplicates
-        await fastify.mongo.db.collection('users').createIndex(
-            { email: 1 },
-            { unique: true }
-        );
+// // Create MongoDB indexes when the connection is ready
+// fastify.addHook('onReady', async () => {
+//     try {
+//         // Create a unique index on email field to prevent duplicates
+//         await fastify.mongo.db.collection('users').createIndex(
+//             { email: 1 },
+//             { unique: true }
+//         );
 
-        // Optional: Create additional indexes for performance optimization
-        await fastify.mongo.db.collection('users').createIndex({ googleId: 1 });
-        await fastify.mongo.db.collection('users').createIndex({ authProvider: 1 });
+//         // Optional: Create additional indexes for performance optimization
+//         await fastify.mongo.db.collection('users').createIndex({ googleId: 1 });
+//         await fastify.mongo.db.collection('users').createIndex({ authProvider: 1 });
 
-        fastify.log.info('MongoDB indexes created successfully');
-    } catch (err) {
-        fastify.log.error('Error creating MongoDB indexes:', err);
-    }
-});
+//         fastify.log.info('MongoDB indexes created successfully');
+//     } catch (err) {
+//         fastify.log.error('Error creating MongoDB indexes:', err);
+//     }
+// });
 
 // Serve static files for the frontend
 await fastify.register(fastifyStatic, {
@@ -93,7 +96,7 @@ await fastify.register(fastifyStatic, {
 await fastify.register(routes, { prefix: '/api' });
 
 // Register auth routes
-await fastify.register(authRoutes, { prefix: '/api' });
+await fastify.register(userRoutes, { prefix: '/api' });
 
 // Start the server
 const start = async () => {
@@ -113,7 +116,7 @@ const start = async () => {
         });
 
         // Setup Socket.io handlers with the properly initialized io instance
-        setupSocketHandlers(io);
+        // setupSocketHandlers(io);
 
         fastify.log.info(`Server listening on ${host}:${port}`);
         fastify.log.info('Socket.io is ready');

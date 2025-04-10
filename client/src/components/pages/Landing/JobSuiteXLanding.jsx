@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
@@ -31,6 +31,9 @@ const JobSuiteXLanding = () => {
     });
     const [formErrors, setFormErrors] = useState({});
     const [submitting, setSubmitting] = useState(false);
+
+    // Reference for rotation interval
+    const rotationIntervalRef = useRef(null);
 
     const features = [
         {
@@ -65,12 +68,16 @@ const JobSuiteXLanding = () => {
 
     // Auto-rotation effect with useEffect
     useEffect(() => {
-        const rotationInterval = setInterval(() => {
+        rotationIntervalRef.current = setInterval(() => {
             setActiveFeature(current => (current + 1) % features.length);
         }, 5000); // Change feature every 5 seconds
 
         // Clear interval on component unmount
-        return () => clearInterval(rotationInterval);
+        return () => {
+            if (rotationIntervalRef.current) {
+                clearInterval(rotationIntervalRef.current);
+            }
+        };
     }, [features.length]);
 
     // Redirect if already authenticated
@@ -136,10 +143,10 @@ const JobSuiteXLanding = () => {
 
         try {
             if (isSignIn) {
-                // Login
+                // Login with our updated backend
                 await login(formData.email, formData.password);
             } else {
-                // Register
+                // Register with our updated backend
                 await register({
                     firstName: formData.firstName,
                     lastName: formData.lastName,
@@ -174,11 +181,17 @@ const JobSuiteXLanding = () => {
     };
 
     const pauseRotation = () => {
-        clearInterval(rotationInterval);
+        if (rotationIntervalRef.current) {
+            clearInterval(rotationIntervalRef.current);
+        }
     };
 
     const resumeRotation = () => {
-        rotationInterval = setInterval(() => {
+        if (rotationIntervalRef.current) {
+            clearInterval(rotationIntervalRef.current);
+        }
+
+        rotationIntervalRef.current = setInterval(() => {
             setActiveFeature(current => (current + 1) % features.length);
         }, 5000);
     };
