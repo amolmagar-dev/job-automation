@@ -1,9 +1,9 @@
-/* AutoJobApplication.css */
+/* AutoJobApplication.css - Dark Theme */
 
 .job-automation-container {
   display: flex;
   flex-direction: column;
-  background-color: #f8fafc;
+  background-color: #141920;
   border-radius: 8px;
   width: 100%;
   position: relative;
@@ -11,14 +11,14 @@
 
 .job-automation-header {
   padding: 20px;
-  background-color: white;
-  border-bottom: 1px solid #e2e8f0;
+  background-color: #1e2430;
+  border-bottom: 1px solid #2d3748;
 }
 
 .job-automation-header h1 {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #0f172a;
+  color: #e2e8f0;
   margin: 0 0 16px 0;
 }
 
@@ -31,7 +31,7 @@
 .config-name-input {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #0f172a;
+  color: #e2e8f0;
   border: none;
   background-color: transparent;
   padding: 4px 8px;
@@ -41,8 +41,8 @@
 }
 
 .config-name-input:focus {
-  border: 1px solid #e2e8f0;
-  background-color: white;
+  border: 1px solid #2d3748;
+  background-color: #1a202c;
 }
 
 .config-actions {
@@ -53,15 +53,15 @@
 
 .status-label {
   font-size: 0.875rem;
-  color: #64748b;
+  color: #94a3b8;
 }
 
 /* Tab Navigation */
 .tab-navigation {
   display: flex;
   padding: 0 20px;
-  border-bottom: 1px solid #e2e8f0;
-  background-color: white;
+  border-bottom: 1px solid #2d3748;
+  background-color: #1e2430;
 }
 
 .tab-item {
@@ -72,19 +72,19 @@
   background: none;
   border: none;
   font-size: 0.875rem;
-  color: #64748b;
+  color: #94a3b8;
   cursor: pointer;
   border-bottom: 2px solid transparent;
   transition: all 0.2s ease;
 }
 
 .tab-item:hover {
-  color: #0f172a;
+  color: #e2e8f0;
 }
 
 .tab-item.active {
-  color: #3b82f6;
-  border-bottom-color: #3b82f6;
+  color: #60a5fa;
+  border-bottom-color: #60a5fa;
 }
 
 .tab-content {
@@ -93,10 +93,10 @@
 }
 
 .content-panel {
-  background-color: white;
+  background-color: #1e2430;
   border-radius: 8px;
   padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .content-panel h2 {
@@ -104,13 +104,13 @@
   margin-bottom: 8px;
   font-size: 1.25rem;
   font-weight: 600;
-  color: #0f172a;
+  color: #e2e8f0;
 }
 
 .content-panel p {
   margin-top: 0;
   margin-bottom: 24px;
-  color: #64748b;
+  color: #94a3b8;
   font-size: 0.875rem;
 }
 
@@ -125,8 +125,8 @@
   display: flex;
   padding: 12px 16px;
   border-radius: 8px;
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background-color: #141920;
+  border: 1px solid #2d3748;
   cursor: pointer;
   transition: all 0.2s ease;
   min-width: 120px;
@@ -135,13 +135,13 @@
 }
 
 .portal-option:hover {
-  border-color: #cbd5e1;
-  background-color: #f1f5f9;
+  border-color: #4b5563;
+  background-color: #1a202c;
 }
 
 .portal-option.active {
   border-color: #3b82f6;
-  background-color: #eff6ff;
+  background-color: #1e3a8a;
 }
 
 .portal-option.disabled {
@@ -155,35 +155,35 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  background-color: #e2e8f0;
+  background-color: #2d3748;
   border-radius: 4px;
   font-weight: 600;
   font-size: 14px;
-  color: #0f172a;
+  color: #e2e8f0;
 }
 
 .portal-name {
   font-weight: 500;
-  color: #0f172a;
+  color: #e2e8f0;
   font-size: 0.875rem;
 }
 
 .portal-status {
   font-size: 0.75rem;
-  color: #64748b;
+  color: #94a3b8;
 }
 
 .portal-status.available {
-  color: #16a34a;
+  color: #4ade80;
 }
 
 .portal-status.soon {
-  color: #f59e0b;
+  color: #fbbf24;
 }
 
 /* Form Styles */
 .credential-form {
-  background-color: #f8fafc;
+  background-color: #141920;
   border-radius: 8px;
   padding: 20px;
 }
@@ -207,23 +207,25 @@
   gap: 8px;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #334155;
+  color: #cbd5e1;
   margin-bottom: 8px;
 }
 
 .form-group input,
 .form-group select {
   padding: 0.5rem 0.75rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #2d3748;
   border-radius: 6px;
   font-size: 0.875rem;
+  background-color: #1a202c;
+  color: #e2e8f0;
 }
 
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
   border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
 }
 
 .password-field {
@@ -242,13 +244,13 @@
   transform: translateY(-50%);
   background: none;
   border: none;
-  color: #64748b;
+  color: #94a3b8;
   cursor: pointer;
 }
 
 .field-hint {
   font-size: 0.75rem;
-  color: #64748b;
+  color: #94a3b8;
   margin-top: 4px;
 }
 
@@ -263,9 +265,9 @@
   align-items: center;
   gap: 8px;
   padding: 12px;
-  background-color: #f0fdf4;
+  background-color: #064e3b;
   border-radius: 6px;
-  color: #16a34a;
+  color: #4ade80;
   font-size: 0.875rem;
   margin-bottom: 16px;
 }
@@ -275,9 +277,9 @@
   align-items: flex-start;
   gap: 8px;
   padding: 12px;
-  background-color: #fff7ed;
+  background-color: #422006;
   border-radius: 6px;
-  color: #9a3412;
+  color: #fdba74;
 }
 
 .security-message svg {
@@ -317,9 +319,9 @@
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background-color: white;
-  color: #334155;
-  border: 1px solid #e2e8f0;
+  background-color: #1a202c;
+  color: #cbd5e1;
+  border: 1px solid #2d3748;
   border-radius: 6px;
   font-size: 0.875rem;
   font-weight: 500;
@@ -328,8 +330,8 @@
 }
 
 .btn-outline:hover {
-  background-color: #f8fafc;
-  border-color: #cbd5e1;
+  background-color: #141920;
+  border-color: #4b5563;
 }
 
 .btn-icon {
@@ -338,7 +340,7 @@
   justify-content: center;
   background: none;
   border: none;
-  color: #64748b;
+  color: #94a3b8;
   cursor: pointer;
   width: 32px;
   height: 32px;
@@ -346,8 +348,8 @@
 }
 
 .btn-icon:hover {
-  background-color: #f1f5f9;
-  color: #3b82f6;
+  background-color: #1a202c;
+  color: #60a5fa;
 }
 
 /* Toggle Switch */
@@ -371,7 +373,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #e2e8f0;
+  background-color: #2d3748;
   transition: .4s;
 }
 
@@ -382,7 +384,7 @@
   width: 16px;
   left: 2px;
   bottom: 2px;
-  background-color: white;
+  background-color: #e2e8f0;
   transition: .4s;
 }
 
@@ -408,7 +410,7 @@ input:checked + .slider:before {
 
 /* Search Criteria Form */
 .search-criteria-form {
-  background-color: #f8fafc;
+  background-color: #141920;
   border-radius: 8px;
   padding: 20px;
 }
@@ -417,7 +419,7 @@ input[type="range"] {
   width: 100%;
   height: 6px;
   -webkit-appearance: none;
-  background: #e2e8f0;
+  background: #2d3748;
   border-radius: 5px;
   outline: none;
   margin: 12px 0;
@@ -435,7 +437,7 @@ input[type="range"]::-webkit-slider-thumb {
 
 /* Resume Settings */
 .resume-settings {
-  background-color: #f8fafc;
+  background-color: #141920;
   border-radius: 8px;
   padding: 20px;
 }
@@ -445,9 +447,9 @@ input[type="range"]::-webkit-slider-thumb {
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  background-color: white;
+  background-color: #1e2430;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #2d3748;
   margin-bottom: 16px;
 }
 
@@ -455,26 +457,26 @@ input[type="range"]::-webkit-slider-thumb {
   margin: 0 0 4px;
   font-size: 1rem;
   font-weight: 600;
-  color: #0f172a;
+  color: #e2e8f0;
 }
 
 .toggle-setting p {
   margin: 0;
   font-size: 0.75rem;
-  color: #64748b;
+  color: #94a3b8;
 }
 
 .resume-options {
   padding: 16px;
-  background-color: white;
+  background-color: #1e2430;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #2d3748;
 }
 
 .option-card {
   padding: 12px;
   border-radius: 6px;
-  background-color: #f8fafc;
+  background-color: #141920;
   margin-bottom: 16px;
 }
 
@@ -487,13 +489,13 @@ input[type="range"]::-webkit-slider-thumb {
 .checkbox-title {
   font-size: 0.875rem;
   font-weight: 500;
-  color: #0f172a;
+  color: #e2e8f0;
   margin-bottom: 4px;
 }
 
 .checkbox-description {
   font-size: 0.75rem;
-  color: #64748b;
+  color: #94a3b8;
 }
 
 .resume-uploader {
@@ -504,18 +506,18 @@ input[type="range"]::-webkit-slider-thumb {
   margin: 0 0 4px;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #0f172a;
+  color: #e2e8f0;
 }
 
 .resume-uploader p {
   margin: 0 0 12px;
   font-size: 0.75rem;
-  color: #64748b;
+  color: #94a3b8;
 }
 
 /* Schedule Settings */
 .schedule-settings {
-  background-color: #f8fafc;
+  background-color: #141920;
   border-radius: 8px;
   padding: 20px;
 }
@@ -531,6 +533,7 @@ input[type="range"]::-webkit-slider-thumb {
   align-items: center;
   gap: 8px;
   cursor: pointer;
+  color: #cbd5e1;
 }
 
 .day-selector {
@@ -546,17 +549,17 @@ input[type="range"]::-webkit-slider-thumb {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background-color: white;
-  border: 1px solid #e2e8f0;
+  background-color: #1e2430;
+  border: 1px solid #2d3748;
   font-size: 0.75rem;
-  color: #64748b;
+  color: #94a3b8;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .day-item:hover {
   border-color: #3b82f6;
-  color: #3b82f6;
+  color: #60a5fa;
 }
 
 .day-item.selected {
@@ -570,9 +573,9 @@ input[type="range"]::-webkit-slider-thumb {
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  background-color: white;
+  background-color: #1e2430;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #2d3748;
   margin-top: 24px;
 }
 
@@ -580,28 +583,28 @@ input[type="range"]::-webkit-slider-thumb {
   margin: 0 0 4px;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #0f172a;
+  color: #e2e8f0;
 }
 
 .next-run-time {
   font-size: 1rem;
   font-weight: 500;
-  color: #3b82f6;
+  color: #60a5fa;
   margin: 0;
 }
 
 /* Notification Settings */
 .notification-settings {
-  background-color: #f8fafc;
+  background-color: #141920;
   border-radius: 8px;
   padding: 20px;
 }
 
 .notification-types {
   padding: 16px;
-  background-color: white;
+  background-color: #1e2430;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #2d3748;
   margin-top: 16px;
 }
 
@@ -609,7 +612,7 @@ input[type="range"]::-webkit-slider-thumb {
   margin: 0 0 16px;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #0f172a;
+  color: #e2e8f0;
 }
 
 .checkbox-group {
@@ -624,9 +627,9 @@ input[type="range"]::-webkit-slider-thumb {
   top: 20px;
   right: 20px;
   width: 240px;
-  background-color: white;
+  background-color: #1e2430;
   border-radius: 8px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   display: none; /* Hidden by default, display with Javascript if needed */
 }
@@ -636,14 +639,14 @@ input[type="range"]::-webkit-slider-thumb {
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid #2d3748;
 }
 
 .configs-header h3 {
   margin: 0;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #0f172a;
+  color: #e2e8f0;
 }
 
 .configs-list {
@@ -661,17 +664,17 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .config-item:hover {
-  background-color: #f8fafc;
+  background-color: #141920;
 }
 
 .config-item.active {
-  background-color: #eff6ff;
+  background-color: #172554;
   border-left: 3px solid #3b82f6;
 }
 
 .config-name {
   font-size: 0.875rem;
-  color: #334155;
+  color: #cbd5e1;
 }
 
 .config-status {
@@ -681,13 +684,13 @@ input[type="range"]::-webkit-slider-thumb {
 }
 
 .config-status.active {
-  background-color: #dcfce7;
-  color: #16a34a;
+  background-color: #064e3b;
+  color: #4ade80;
 }
 
 .config-status.inactive {
-  background-color: #f1f5f9;
-  color: #64748b;
+  background-color: #1a202c;
+  color: #94a3b8;
 }
 
 /* Responsive design */
