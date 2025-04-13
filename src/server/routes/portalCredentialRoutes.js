@@ -1,5 +1,7 @@
 // routes/portalCredentialRoutes.js
 import logger from '../../utils/logger.js';
+import { verify } from '../../utils/verifyCredentials.js';
+
 
 /**
  * Portal credential-related route definitions
@@ -137,8 +139,7 @@ export default async function portalCredentialRoutes(fastify, options) {
             const userId = request.user.id;
             const portal = request.params.portal;
 
-            // Get credentials with decrypted password
-            const credentials = await fastify.portalCredentialModel.getLoginCredentials(userId, portal);
+            const credentials = request.body;
 
             if (!credentials) {
                 return reply.code(404).send({
@@ -147,10 +148,19 @@ export default async function portalCredentialRoutes(fastify, options) {
                 });
             }
 
-            // In a real implementation, this would attempt to log in to the portal
-            // and update the cookies if successful
+            if (!(portal in verify)) {
+                return reply.code(400).send({
+                    error: 'Unsupported Portal',
+                    message: `Verification not implemented for ${portal}`
+                });
+            }
 
-            // For now, we'll just simulate a successful verification
+            const isValid = await verify[portal](credentials.username, credentials.password);
+
+            if (!isValid) {
+                throw new Error('Invalid credentials');
+            }
+
             const mockCookies = `session=mock-session-${Date.now()}; domain=.${portal}.com; path=/;`;
             await fastify.portalCredentialModel.updateCookies(userId, portal, mockCookies);
 
@@ -164,7 +174,6 @@ export default async function portalCredentialRoutes(fastify, options) {
         } catch (error) {
             logger.error(`Error verifying portal credentials: ${error.message}`);
 
-            // Mark credentials as invalid if verification failed
             try {
                 await fastify.portalCredentialModel.markInvalid(request.user.id, request.params.portal);
             } catch (markError) {

@@ -39,6 +39,9 @@ let io;
 
 // Register cors
 await fastify.register(fastifyCors, {
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['Content-Range', 'X-Content-Range'],
     origin: true // Allow all origins for now
 });
 

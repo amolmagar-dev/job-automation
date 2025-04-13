@@ -1,7 +1,8 @@
 // AutoJobApplication.jsx
 import React, { useState, useEffect } from 'react';
-import { toast } from 'react-toastify';
+// import { toast } from 'react-toastify';
 import axios from 'axios';
+import toast, { Toaster } from 'react-hot-toast';
 import {
     Briefcase,
     Settings,
@@ -208,14 +209,36 @@ const AutoJobApplication = () => {
                 return;
             }
 
-            const response = await axios.post(`${API_URL}/portal-credentials/naukri/verify`, {}, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
+            // Check if we have credentials to verify
+            if (!username) {
+                toast.error('Username is required');
+                return;
+            }
 
-            if (response.data.success) {
-                toast.success('Connection verified successfully');
+            // For verification, we need the password
+            if (!password && !credentialsSaved) {
+                toast.error('Password is required for verification');
+                return;
+            }
+
+            // Create the request body with credentials
+            const verifyData = {
+                username: username,
+                password: password
+            };
+
+            const response = await axios.post(
+                `${API_URL}/portal-credentials/naukri/verify`,
+                verifyData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+
+            if (response) {
+                toast('Here is your toast.')
             }
         } catch (error) {
             toast.error('Failed to verify connection: ' + (error.response?.data?.message || error.message));
