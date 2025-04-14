@@ -245,7 +245,7 @@ class JobRunner {
             let result;
             switch (job.portal) {
                 case 'naukri':
-                    const naukriAutomation = new NaukriJobAutomation(browser, job);
+                    const naukriAutomation = new NaukriJobAutomation(browser, job , this.app , user , credentials);
                     result = await naukriAutomation.start();
                     break;
                 // Add cases for other portals as needed

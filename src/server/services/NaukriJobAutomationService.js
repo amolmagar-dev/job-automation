@@ -6,13 +6,15 @@ import { notifyAll } from '../../../notifier/index.js';
 dotenv.config();
 
 export class NaukriJobAutomation {
-    constructor(browser, jobConfig) {
+    constructor(browser, jobConfig, fastify , user, credentials) {
         this.browser = browser;
+        this.fastify = fastify;
+        this.user = user;
         this.jobConfig = jobConfig;
         this.bot = null;
         this.credentials = {
-            email: process.env.NAUKRI_EMAIL,
-            password: process.env.NAUKRI_PASSWORD
+            email: credentials.username || process.env.NAUKRI_USERNAME,
+            password: credentials.password || process.env.NAUKRI_PASSWORD
         };
         this.maxPagesToScrape = parseInt(process.env.SCRAPE_PAGES || "5");
         this.sortBy = process.env.JOB_SHORT_BY || "Date";
