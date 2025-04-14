@@ -5,7 +5,9 @@
  * based on user configurations in MongoDB.
  */
 import cron from 'node-cron';
+import browserInstance from '../../browser/browser.js';
 import { JobConfigModel } from '../models/JobConfigModel.js';
+import { NaukriJobAutomation } from '../services/NaukriJobAutomationService.js';
 
 class JobRunner {
     constructor(app) {
@@ -13,6 +15,8 @@ class JobRunner {
         this.isRunning = false;
         this.scheduledJobs = new Map(); // Map to keep track of scheduled jobs
         this.mainScheduler = null;
+        this.jobQueue = []; // Queue to store jobs that need to be executed
+        this.isProcessingQueue = false; // Flag to track if we're currently processing the queue
     }
 
     /**
@@ -24,7 +28,7 @@ class JobRunner {
 
             // Schedule the main job checker to run every minute
             this.mainScheduler = cron.schedule('* * * * *', async () => {
-                await this.checkAndRunScheduledJobs();
+                await this.checkAndQueueScheduledJobs();
             });
 
             // Load all active jobs on startup
@@ -78,8 +82,9 @@ class JobRunner {
         this.app.log.info(`Scheduling job ${job._id} with cron: ${cronExpression}`);
 
         // Schedule the job with node-cron
+        // Instead of executing directly, add to queue
         const scheduledJob = cron.schedule(cronExpression, async () => {
-            await this.executeJob(job._id.toString());
+            this.addToQueue(job._id.toString());
         });
 
         // Store the scheduled job reference
@@ -101,25 +106,8 @@ class JobRunner {
             switch (frequency) {
                 case 'daily':
                     return `${minutes} ${hours} * * *`;
-
-                case 'weekly':
-                    if (!days || !Array.isArray(days) || days.length === 0) {
-                        return null;
-                    }
-                    // Convert days array to cron day expression (0-6, where 0 is Sunday)
-                    const weekDays = days.join(',');
-                    return `${minutes} ${hours} * * ${weekDays}`;
-
-                case 'custom':
-                    if (!days || !Array.isArray(days) || days.length === 0) {
-                        return null;
-                    }
-                    // For custom schedule, treat days as days of week
-                    const customDays = days.join(',');
-                    return `${minutes} ${hours} * * ${customDays}`;
-
                 default:
-                    return null;
+                    return `*/10 * * * * *`;
             }
         } catch (error) {
             this.app.log.error({ err: error }, 'Error calculating cron expression');
@@ -128,11 +116,11 @@ class JobRunner {
     }
 
     /**
-     * Check for jobs that need to be run and execute them
+     * Check for jobs that need to be run and add them to the queue
      */
-    async checkAndRunScheduledJobs() {
+    async checkAndQueueScheduledJobs() {
         if (this.isRunning) {
-            return; // Prevent concurrent runs
+            return; // Prevent concurrent runs of the checker
         }
 
         this.isRunning = true;
@@ -142,17 +130,68 @@ class JobRunner {
             const jobsToRun = await JobConfigModel.findDueForExecution(this.app);
 
             if (jobsToRun.length > 0) {
-                this.app.log.info(`Found ${jobsToRun.length} jobs to run`);
-            }
+                this.app.log.info(`Found ${jobsToRun.length} jobs to queue`);
 
-            // Execute each job
-            for (const job of jobsToRun) {
-                await this.executeJob(job._id.toString());
+                // Add each job to the queue
+                for (const job of jobsToRun) {
+                    this.addToQueue(job._id.toString());
+                }
             }
         } catch (error) {
             this.app.log.error({ err: error }, 'Error checking scheduled jobs');
         } finally {
             this.isRunning = false;
+        }
+    }
+
+    /**
+     * Add a job to the execution queue
+     * @param {String} jobId - The job ID
+     */
+    addToQueue(jobId) {
+        // Check if job is already in queue to prevent duplicates
+        if (!this.jobQueue.includes(jobId)) {
+            this.app.log.info(`Adding job ${jobId} to execution queue`);
+            this.jobQueue.push(jobId);
+
+            // Start processing the queue if not already processing
+            if (!this.isProcessingQueue) {
+                this.processQueue();
+            }
+        } else {
+            this.app.log.debug(`Job ${jobId} is already in the queue`);
+        }
+    }
+
+    /**
+     * Process the job queue sequentially
+     */
+    async processQueue() {
+        if (this.isProcessingQueue) {
+            return;
+        }
+
+        this.isProcessingQueue = true;
+
+        try {
+            while (this.jobQueue.length > 0) {
+                const jobId = this.jobQueue[0]; // Get the first job in the queue
+
+                this.app.log.info(`Processing queued job ${jobId}`);
+
+                try {
+                    // Execute the job
+                    await this.executeJob(jobId);
+                } catch (error) {
+                    this.app.log.error({ err: error }, `Error executing queued job ${jobId}`);
+                }
+
+                // Remove the job from the queue whether it succeeded or failed
+                this.jobQueue.shift();
+            }
+        } finally {
+            this.isProcessingQueue = false;
+            this.app.log.info('Job queue processing completed');
         }
     }
 
@@ -184,81 +223,77 @@ class JobRunner {
                 _id: new this.app.mongo.ObjectId(job.user)
             });
 
-            if (!user || !user.isActive) {
+            if (!user) {
                 this.app.log.warn(`User for job ${jobId} is inactive or not found`);
                 return;
             }
 
             // Get portal credentials
-            const credentials = await this.app.mongo.db.collection('portalCredentials').findOne({
-                user: job.user,
-                portal: job.portal,
-                isValid: true
-            });
+            let credentials = await this.app.portalCredentialModel.getLoginCredentials(job.user, job.portal);
 
             if (!credentials) {
                 this.app.log.warn(`No valid credentials found for job ${jobId}, portal: ${job.portal}`);
                 return;
             }
 
-            // Execute search based on portal type
-            // const results = await searchPortal(
-            //     this.app,
-            //     job.portal,
-            //     credentials,
-            //     job.searchConfig,
-            //     job.filterConfig
-            // );
+            // Add credentials to job config for automation
+            job.credentials = credentials;
 
-            // Store results if any
-            if (results && results.length > 0) {
-                await this.storeJobResults(job, results);
+            // Initialize browser and run automation based on portal type
+            const browser = await browserInstance.getBrowser();
+
+            let result;
+            switch (job.portal) {
+                case 'naukri':
+                    const naukriAutomation = new NaukriJobAutomation(browser, job);
+                    result = await naukriAutomation.start();
+                    break;
+                // Add cases for other portals as needed
+                default:
+                    throw new Error(`Unsupported portal: ${job.portal}`);
             }
 
             // Update the job's last run and next run time
             await JobConfigModel.updateNextRunTime(this.app, jobId);
 
-            this.app.log.info(`Job ${jobId} executed successfully, found ${results ? results.length : 0} results`);
+            // Store results if successful
+            if (result && result.success && result.jobsApplied > 0) {
+                await this.storeJobResults(job, result);
+            }
+
+            this.app.log.info(`Job ${jobId} executed successfully, applied to ${result?.jobsApplied || 0} jobs`);
+            return result;
         } catch (error) {
             this.app.log.error({ err: error }, `Error executing job ${jobId}`);
+            throw error; // Re-throw to be caught by processQueue
         }
     }
 
     /**
      * Store job results in the database
      * @param {Object} job - The job configuration
-     * @param {Array} results - Array of job search results
+     * @param {Object} result - The job execution result
      */
-    async storeJobResults(job, results) {
+    async storeJobResults(job, result) {
         try {
             const now = new Date();
 
-            // Prepare bulk operations
-            const operations = results.map(result => ({
-                insertOne: {
-                    document: {
-                        jobConfig: job._id,
-                        user: job.user,
-                        portal: job.portal,
-                        title: result.title,
-                        company: result.company,
-                        location: result.location,
-                        salary: result.salary,
-                        url: result.url,
-                        description: result.description,
-                        isApplied: false,
-                        isRejected: false,
-                        isSaved: false,
-                        createdAt: now,
-                        updatedAt: now
-                    }
-                }
-            }));
+            // Create a job run record
+            await this.app.mongo.db.collection('jobRuns').insertOne({
+                jobConfig: job._id,
+                user: job.user,
+                portal: job.portal,
+                startTime: result.startTime || now,
+                endTime: result.endTime || now,
+                jobsFound: result.jobsFound || 0,
+                jobsApplied: result.jobsApplied || 0,
+                success: result.success || false,
+                message: result.message || '',
+                error: result.error ? result.error.toString() : null,
+                createdAt: now
+            });
 
-            // Insert all results
-            if (operations.length > 0) {
-                await this.app.mongo.db.collection('jobResults').bulkWrite(operations);
-            }
+            this.app.log.info(`Stored results for job ${job._id}, applied to ${result.jobsApplied || 0} jobs`);
         } catch (error) {
             this.app.log.error({ err: error }, 'Error storing job results');
         }
@@ -281,8 +316,10 @@ class JobRunner {
             this.app.log.debug(`Stopped scheduled job ${jobId}`);
         }
 
-        // Clear the map
+        // Clear the map and queue
         this.scheduledJobs.clear();
+        this.jobQueue = [];
+        this.isProcessingQueue = false;
 
         this.app.log.info('Job Runner service stopped');
     }
@@ -323,7 +360,14 @@ class JobRunner {
             const scheduledJob = this.scheduledJobs.get(jobId);
             scheduledJob.stop();
             this.scheduledJobs.delete(jobId);
-            this.app.log.info(`Removed job ${jobId} from scheduler`);
+
+            // Also remove from queue if present
+            const queueIndex = this.jobQueue.indexOf(jobId);
+            if (queueIndex !== -1) {
+                this.jobQueue.splice(queueIndex, 1);
+            }
+
+            this.app.log.info(`Removed job ${jobId} from scheduler and queue`);
         }
     }
 
@@ -334,6 +378,31 @@ class JobRunner {
     async updateJob(jobId) {
         // Simply re-add the job (which will handle removing the old one)
         await this.addJob(jobId);
+    }
+
+    /**
+     * Force execution of a job immediately
+     * @param {String} jobId - The job ID
+     */
+    async runJobNow(jobId) {
+        try {
+            // Add to front of queue for immediate execution
+            if (!this.jobQueue.includes(jobId)) {
+                this.jobQueue.unshift(jobId);
+                this.app.log.info(`Added job ${jobId} to front of queue for immediate execution`);
+
+                // Start processing if not already
+                if (!this.isProcessingQueue) {
+                    this.processQueue();
+                }
+                return { success: true, message: 'Job queued for immediate execution' };
+            } else {
+                return { success: false, message: 'Job is already in the queue' };
+            }
+        } catch (error) {
+            this.app.log.error({ err: error }, `Error queuing job ${jobId} for immediate execution`);
+            return { success: false, message: 'Failed to queue job', error: error.message };
+        }
     }
 }
 
@@ -352,7 +421,7 @@ export default async function jobRunnerPlugin(fastify, options) {
     // Initialize the job runner after server starts
     fastify.addHook('onReady', async () => {
         await jobRunner.initialize();
-        });
+    });
 
     // Clean up on server close
     fastify.addHook('onClose', async (instance) => {
@@ -381,6 +450,18 @@ export default async function jobRunnerPlugin(fastify, options) {
         } catch (error) {
             request.log.error({ err: error }, 'Error removing job from scheduler');
             return reply.code(500).send({ success: false, message: 'Failed to remove job from scheduler' });
+        }
+    });
+
+    fastify.post('/api/jobs/:id/run', async (request, reply) => {
+        const { id } = request.params;
+
+        try {
+            const result = await jobRunner.runJobNow(id);
+            return result;
+        } catch (error) {
+            request.log.error({ err: error }, 'Error running job now');
+            return reply.code(500).send({ success: false, message: 'Failed to run job' });
         }
     });
 }

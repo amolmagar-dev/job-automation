@@ -21,6 +21,7 @@ class BrowserSingleton {
           '--disable-setuid-sandbox',
           '--disable-blink-features=AutomationControlled',
           '--start-maximized',
+          '--incognito'
         ],
         defaultViewport: null,
       });
