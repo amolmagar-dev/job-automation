@@ -16,6 +16,7 @@ import jobConfigPlugin from './plugins/jobConfigPlugin.js';
 import jobConfigRoutes from './routes/jobConfigRoutes.js';
 import portalCredentialPlugin from './plugins/portalCredentialPlugin.js';
 import portalCredentialRoutes from './routes/portalCredentialRoutes.js';
+import jobRunnerPlugin from './job/jobRunner.js';
 
 // Load environment variables
 dotenv.config();
@@ -58,6 +59,8 @@ await fastify.register(fastifyMongo, {
 fastify.register(userModelPlugin);
 fastify.register(jobConfigPlugin);
 fastify.register(portalCredentialPlugin);
+await fastify.register(jobRunnerPlugin, {});
+
 
 
 // Register JWT plugin for authentication

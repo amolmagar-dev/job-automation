@@ -1,4 +1,3 @@
-// AutoJobApplication.jsx
 import React, { useState, useEffect } from 'react';
 // import { toast } from 'react-toastify';
 import axios from 'axios';
@@ -18,11 +17,13 @@ import {
     EyeOff,
     User,
     Lock,
-    RotateCw
+    RotateCw,
+    Brain,
+    Download
 } from 'lucide-react';
 import './AutoJobApplication.css';
 
-const API_URL =  'http://localhost:3000';
+const API_URL = 'http://localhost:3000';
 
 const AutoJobApplication = () => {
     const [activeTab, setActiveTab] = useState('portals');
@@ -45,6 +46,10 @@ const AutoJobApplication = () => {
     const [jobType, setJobType] = useState('fulltime');
     const [minRating, setMinRating] = useState(3.5);
     const [maxApplications, setMaxApplications] = useState(10);
+
+    // AI Training state
+    const [selfDescription, setSelfDescription] = useState('');
+    const [isGeneratingProfile, setIsGeneratingProfile] = useState(false);
 
     // Schedule state
     const [applyFrequency, setApplyFrequency] = useState('daily');
@@ -119,6 +124,13 @@ const AutoJobApplication = () => {
             setApplyFrequency(config.schedule.frequency || 'daily');
             setApplyDays(config.schedule.days || [1, 2, 3, 4, 5]);
             setApplyTime(config.schedule.time || '09:00');
+        }
+
+        // AI Training settings
+        if (config.aiTraining && config.aiTraining.selfDescription) {
+            setSelfDescription(config.aiTraining.selfDescription);
+        } else {
+            setSelfDescription('');
         }
 
         // Fetch credentials for this config
@@ -247,6 +259,45 @@ const AutoJobApplication = () => {
         }
     };
 
+    // Analyze user profile
+    const analyzeProfile = async () => {
+        try {
+            setIsGeneratingProfile(true);
+            const token = localStorage.getItem('token');
+
+            if (!token) {
+                toast.error('You must be logged in to analyze your profile');
+                return;
+            }
+
+            if (!currentConfigId) {
+                toast.error('Please save your configuration first');
+                return;
+            }
+
+            // Call the API endpoint to analyze profile
+            const response = await axios.post(
+                `${API_URL}/job-config/${currentConfigId}/analyze-profile`,
+                { portal: 'naukri' },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                }
+            );
+
+            if (response.data.success) {
+                // Update the UI with the generated description
+                setSelfDescription(response.data.aiTraining.selfDescription);
+                toast.success('Profile analyzed and description generated successfully');
+            }
+        } catch (error) {
+            toast.error('Failed to analyze profile: ' + (error.response?.data?.message || error.message));
+        } finally {
+            setIsGeneratingProfile(false);
+        }
+    };
+
     // Save configuration
     const saveConfig = async () => {
         try {
@@ -276,7 +327,10 @@ const AutoJobApplication = () => {
                 requiredSkills: jobKeywords.split(',').map(skill => skill.trim()),
                 frequency: applyFrequency,
                 days: applyDays,
-                time: applyTime
+                time: applyTime,
+                aiTraining: {
+                    selfDescription: selfDescription
+                }
             };
 
             let response;
@@ -390,6 +444,13 @@ const AutoJobApplication = () => {
                 >
                     <Settings size={18} />
                     Search Criteria
+                </button>
+                <button
+                    className={`tab-item ${activeTab === 'ai-training' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('ai-training')}
+                >
+                    <Brain size={18} />
+                    Train Your AI
                 </button>
                 <button
                     className={`tab-item ${activeTab === 'resume' ? 'active' : ''}`}
@@ -578,6 +639,115 @@ const AutoJobApplication = () => {
                                     onChange={(e) => setMaxApplications(e.target.value)}
                                 />
                                 <div className="field-hint">Limit how many applications to submit each time</div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'ai-training' && (
+                    <div className="content-panel">
+                        <h2>Train Your AI</h2>
+                        <p>Tell the AI about yourself so it can answer questions on your behalf during job applications</p>
+
+                        <div className="ai-training-form">
+                            <div className="form-group">
+                                <label>About Yourself</label>
+                                <textarea
+                                    rows="8"
+                                    value={selfDescription}
+                                    onChange={(e) => setSelfDescription(e.target.value)}
+                                    placeholder="Describe your skills, experience, education, and career goals. The more details you provide, the better the AI can represent you."
+                                    className="self-description-textarea"
+                                ></textarea>
+                                <div className="field-hint">Write in first person as if you're introducing yourself in an interview</div>
+                            </div>
+
+                            <div className="button-group">
+                                <button
+                                    className="btn-primary"
+                                    onClick={() => {
+                                        if (!currentConfigId) {
+                                            toast.error("Please save your configuration first");
+                                            return;
+                                        }
+
+                                        // Save the AI training data
+                                        const token = localStorage.getItem('token');
+                                        if (token) {
+                                            axios.post(
+                                                `${API_URL}/job-config/${currentConfigId}/ai-training`,
+                                                { selfDescription },
+                                                {
+                                                    headers: {
+                                                        Authorization: `Bearer ${token}`
+                                                    }
+                                                }
+                                            )
+                                                .then(response => {
+                                                    if (response.data.success) {
+                                                        toast.success('AI training data saved successfully');
+                                                    }
+                                                })
+                                                .catch(error => {
+                                                    toast.error('Failed to save AI training data: ' + (error.response?.data?.message || error.message));
+                                                });
+                                        }
+                                    }}
+                                >
+                                    <Save size={18} />
+                                    Save Description
+                                </button>
+
+                                <button
+                                    className="btn-outline"
+                                    onClick={analyzeProfile}
+                                    disabled={isGeneratingProfile || !credentialsSaved}
+                                >
+                                    {isGeneratingProfile ? (
+                                        <>
+                                            <RotateCw size={18} className="spinning-icon" />
+                                            Analyzing...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Download size={18} />
+                                            Analyze Your Profile from Portal
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+
+                            {!credentialsSaved && (
+                                <div className="security-message">
+                                    <AlertCircle size={18} />
+                                    <p>Please save your credentials in the Job Portals tab before analyzing your profile.</p>
+                                </div>
+                            )}
+
+                            <div className="ai-info-box">
+                                <div className="ai-info-header">
+                                    <Brain size={18} />
+                                    <h3>How this works</h3>
+                                </div>
+                                <p>
+                                    The AI assistant uses your description to intelligently answer screening questions during automated applications. It will represent you accurately based on the information you provide and the profile data from your job portal.
+                                </p>
+                                <ul className="ai-features-list">
+                                    <li>Answers common screening questions</li>
+                                    <li>Highlights relevant skills for each job</li>
+                                    <li>Maintains professional tone</li>
+                                    <li>Never fabricates qualifications</li>
+                                </ul>
+                            </div>
+
+                            <div className="ai-sample-questions">
+                                <h3>Sample Questions Your AI Can Answer</h3>
+                                <div className="sample-questions-grid">
+                                    <div className="sample-question">Why do you want to work with our company?</div>
+                                    <div className="sample-question">What is your greatest professional achievement?</div>
+                                    <div className="sample-question">How do you handle tight deadlines?</div>
+                                    <div className="sample-question">What is your expected salary range?</div>
+                                </div>
                             </div>
                         </div>
                     </div>

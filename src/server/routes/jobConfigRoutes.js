@@ -57,6 +57,7 @@ export default async function jobConfigRoutes(fastify, options) {
                 searchConfig: config.searchConfig,
                 filterConfig: config.filterConfig,
                 schedule: config.schedule,
+                aiTraining: config.aiTraining,
                 createdAt: config.createdAt,
                 updatedAt: config.updatedAt
             }));
@@ -98,6 +99,7 @@ export default async function jobConfigRoutes(fastify, options) {
                 searchConfig: config.searchConfig,
                 filterConfig: config.filterConfig,
                 schedule: config.schedule,
+                aiTraining: config.aiTraining,
                 createdAt: config.createdAt,
                 updatedAt: config.updatedAt
             };
@@ -146,6 +148,7 @@ export default async function jobConfigRoutes(fastify, options) {
                 searchConfig: updatedConfig.searchConfig,
                 filterConfig: updatedConfig.filterConfig,
                 schedule: updatedConfig.schedule,
+                aiTraining: updatedConfig.aiTraining,
                 createdAt: updatedConfig.createdAt,
                 updatedAt: updatedConfig.updatedAt
             };
@@ -267,6 +270,135 @@ export default async function jobConfigRoutes(fastify, options) {
             };
         } catch (error) {
             logger.error(`Error running job config: ${error.message}`);
+            return reply.code(500).send({
+                error: 'Server Error',
+                message: error.message
+            });
+        }
+    });
+
+    // Update AI training data for a job config
+    fastify.post('/job-config/:id/ai-training', { onRequest: [fastify.authenticate] }, async (request, reply) => {
+        try {
+            const userId = request.user.id;
+            const configId = request.params.id;
+            const trainingData = request.body;
+
+            // Validate required fields
+            if (!trainingData.selfDescription) {
+                return reply.code(400).send({
+                    error: 'Validation Error',
+                    message: 'Self description is required for AI training'
+                });
+            }
+
+            // Check if the job config exists and belongs to the user
+            const existingConfig = await fastify.jobConfigModel.findById(configId, userId);
+
+            if (!existingConfig) {
+                return reply.code(404).send({
+                    error: 'Not Found',
+                    message: 'Job configuration not found or you do not have access'
+                });
+            }
+
+            // Update the AI training data
+            const aiTrainingData = {
+                aiTraining: {
+                    selfDescription: trainingData.selfDescription,
+                    updatedAt: new Date()
+                }
+            };
+
+            await fastify.jobConfigModel.update(configId, userId, aiTrainingData);
+
+            return {
+                success: true,
+                message: 'AI training data updated successfully',
+                aiTraining: aiTrainingData.aiTraining
+            };
+        } catch (error) {
+            logger.error(`Error updating AI training data: ${error.message}`);
+            return reply.code(500).send({
+                error: 'Server Error',
+                message: error.message
+            });
+        }
+    });
+
+    // Analyze user profile from portal
+    fastify.post('/job-config/:id/analyze-profile', { onRequest: [fastify.authenticate] }, async (request, reply) => {
+        try {
+            const userId = request.user.id;
+            const configId = request.params.id;
+            const { portal } = request.body;
+
+            // Check if the job config exists and belongs to the user
+            const existingConfig = await fastify.jobConfigModel.findById(configId, userId);
+
+            if (!existingConfig) {
+                return reply.code(404).send({
+                    error: 'Not Found',
+                    message: 'Job configuration not found or you do not have access'
+                });
+            }
+
+            // Get portal credentials
+            const credential = await fastify.portalCredentialModel.findByPortal(userId, portal || 'naukri');
+
+            if (!credential) {
+                return reply.code(400).send({
+                    error: 'Missing Credentials',
+                    message: 'Portal credentials are required to analyze your profile'
+                });
+            }
+
+            // In a real implementation, this would connect to the portal and fetch profile data
+            // For demo purposes, we'll generate a mock profile description
+
+            logger.info(`Analyzing profile for user ${userId} from ${portal || 'naukri'} portal`);
+
+            // Simulate AI profile analysis
+            const profileData = {
+                skills: ['JavaScript', 'React', 'Node.js', 'MongoDB', 'API Development'],
+                experience: [
+                    {
+                        title: 'Senior Developer',
+                        company: 'Tech Solutions Inc.',
+                        duration: '3 years'
+                    },
+                    {
+                        title: 'Web Developer',
+                        company: 'Digital Creations',
+                        duration: '2 years'
+                    }
+                ],
+                education: 'B.Tech in Computer Science',
+                achievements: 'Reduced application load time by 40%'
+            };
+
+            // Generate a self description from the profile data
+            const generatedDescription = `I am a full-stack developer with 5+ years of experience specializing in JavaScript, React, Node.js, and MongoDB. In my current role as Senior Developer at Tech Solutions Inc. for the past 3 years, I've led development projects that improved application performance by 40%. Previously, I worked as a Web Developer at Digital Creations for 2 years. I have a B.Tech in Computer Science and enjoy solving complex technical challenges.`;
+
+            // Update the AI training data with the generated description
+            const aiTrainingData = {
+                aiTraining: {
+                    selfDescription: generatedDescription,
+                    profileData: profileData,
+                    source: portal || 'naukri',
+                    updatedAt: new Date()
+                }
+            };
+
+            await fastify.jobConfigModel.update(configId, userId, aiTrainingData);
+
+            return {
+                success: true,
+                message: 'Profile analyzed successfully',
+                aiTraining: aiTrainingData.aiTraining
+            };
+        } catch (error) {
+            logger.error(`Error analyzing profile: ${error.message}`);
             return reply.code(500).send({
                 error: 'Server Error',
                 message: error.message

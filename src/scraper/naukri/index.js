@@ -67,5 +67,3 @@ export async function startNaukriAutomation() {
       console.error('Error during automation loop:', err);
     }
 }
-
-startNaukriAutomation();

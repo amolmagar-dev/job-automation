@@ -8,7 +8,7 @@
     "test": "tests"
   },
   "scripts": {
-    "start": "node index.js",
+    "start": "nodemon index.js",
     "dev:naukri": "nodemon src/scraper/naukri/index.js",
     "dev:glassdoor": "nodemon src/scraper/glassdoor/index.js",
     "lint": "eslint .",
@@ -31,6 +31,7 @@
     "dotenv": "^16.4.7",
     "fastify": "^5.2.2",
     "google-auth-library": "^9.15.1",
+    "node-cron": "^3.0.3",
     "nodemailer": "^6.10.0",
     "pino": "^9.6.0",
     "pino-pretty": "^13.0.0",
