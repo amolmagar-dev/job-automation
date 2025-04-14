@@ -37,6 +37,10 @@ export const jobConfigSchema = {
         lastRun: { type: 'date' },
         nextRun: { type: 'date' }
     },
+    aiTraining: {
+        selfDescription: { type: 'string' },
+        updatedAt: { type: 'date', default: Date.now }
+    },
     createdAt: { type: 'date', default: Date.now },
     updatedAt: { type: 'date', default: Date.now }
 };
@@ -176,6 +180,11 @@ export const JobConfigModel = {
                 updateData.days || config.schedule.days,
                 updateData.time || config.schedule.time
             );
+        }
+
+        if (updateData.aiTraining.selfDescription !== undefined) {
+            updates['aiTraining.selfDescription'] = updateData.aiTraining.selfDescription;
+            updates['aiTraining.updatedAt'] = new Date();
         }
 
         return await app.mongo.db.collection('jobConfigs').updateOne(

@@ -667,7 +667,7 @@ const AutoJobApplication = () => {
                                     className="btn-primary"
                                     onClick={() => {
                                         if (!currentConfigId) {
-                                            toast.error("Please save your configuration first");
+                                            console.warn("Please save your configuration first");
                                             return;
                                         }
 
