@@ -187,139 +187,287 @@ export class NaukriJobAutomation {
     }
 
     async applyForJobs(jobs) {
+        console.log(`🔄 Starting to apply for ${jobs.length} jobs`);
+
         for (const job of jobs) {
-            console.log(`\n💼 Applying to: ${job.title} | ${job.company} Skills: ${job?.skills}`);
+            console.log(`\n==================================`);
+            console.log(`💼 Applying to: ${job.title} | ${job.company} Skills: ${job?.skills}`);
+            console.log(`🔗 Apply link: ${job.applyLink}`);
+
             const jobPage = await this.browser.newPage();
-            await jobPage.goto(job.applyLink, { waitUntil: 'networkidle2' });
+            console.log(`📄 New page created for job application`);
 
             try {
-                await jobPage.waitForSelector('.apply-button', { timeout: 5000 });
-                await jobPage.click('.apply-button');
-                await new Promise(resolve => setTimeout(resolve, 3000));
+                console.log(`🌐 Navigating to application URL...`);
+                await jobPage.goto(job.applyLink, { waitUntil: 'networkidle2' });
+                console.log(`✅ Page loaded successfully`);
 
+                console.log(`🔍 Looking for apply button...`);
+                const applyButtonExists = await jobPage.$('.apply-button') !== null;
+                console.log(`🔍 Apply button exists: ${applyButtonExists}`);
+
+                await jobPage.waitForSelector('.apply-button', { timeout: 5000 });
+                console.log(`✅ Apply button found`);
+
+                await jobPage.click('.apply-button');
+                console.log(`👆 Clicked on apply button`);
+
+                console.log(`⏳ Waiting for 3 seconds...`);
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                console.log(`✅ Finished waiting`);
+
+                console.log(`🔍 Checking for chatbot drawer...`);
                 const chatDrawer = await jobPage.$('.chatbot_DrawerContentWrapper');
+                console.log(`🔍 Chatbot drawer exists: ${chatDrawer !== null}`);
+
                 if (chatDrawer) {
-                    console.log("💬 Chatbot detected");
+                    console.log("💬 Chatbot detected, starting chat form handling...");
                     let appliedJobPage = await this.handleChatForm(jobPage);
+                    console.log(`✅ Returned from handleChatForm function`);
+
+                    console.log(`🔍 Checking for success message...`);
                     const success = await appliedJobPage.evaluate(() => {
-                        const msg = Array.from(document.querySelectorAll('body *')).find(el =>
-                            el.innerText?.includes('You have successfully applied to')
-                        );
-                        return msg?.innerText;
+                        const elements = Array.from(document.querySelectorAll('body *'));
+                        console.log(`Found ${elements.length} elements to search through`);
+
+                        const msg = elements.find(el => {
+                            const text = el.innerText || '';
+                            return text.includes('You have successfully applied to');
+                        });
+
+                        return msg?.innerText || null;
                     });
+
+                    console.log(`🔍 Success message found: ${success !== null}`);
+
                     if (success) {
+                        console.log(`📣 Creating notification for job: ${job.title}`);
                         notifyAll(this.createNotification(job));
                         console.log(`✅ ${success}`);
+                    } else {
+                        console.log(`⚠️ No success message found after chatbot interaction`);
                     }
                 } else {
+                    console.log(`💬 No chatbot found, checking for direct success message...`);
+                    console.log(`⏳ Waiting for 4 seconds for page to update...`);
                     await new Promise(resolve => setTimeout(resolve, 4000));
+                    console.log(`✅ Finished waiting`);
+
+                    console.log(`🔍 Checking for success message on regular page...`);
                     const success = await jobPage.evaluate(() => {
-                        const msg = Array.from(document.querySelectorAll('body *')).find(el =>
-                            el.innerText?.includes('You have successfully applied to')
-                        );
-                        return msg?.innerText;
+                        const elements = Array.from(document.querySelectorAll('body *'));
+                        console.log(`Found ${elements.length} elements to search through`);
+
+                        const msg = elements.find(el => {
+                            const text = el.innerText || '';
+                            return text.includes('You have successfully applied to');
+                        });
+
+                        return msg?.innerText || null;
                     });
+
+                    console.log(`🔍 Success message found: ${success !== null}`);
+
                     if (success) {
+                        console.log(`📣 Creating notification for job: ${job.title}`);
                         notifyAll(this.createNotification(job));
                         console.log(`✅ ${success}`);
                     }
-                    else console.log("🤷 Unknown apply result");
+                    else console.log("🤷 Unknown apply result - no success message detected");
                 }
 
             } catch (err) {
                 console.log(`❌ Couldn't apply: ${err.message}`);
+                console.log(`📚 Error stack: ${err.stack}`);
             }
 
+            console.log(`🔒 Closing job page`);
             await jobPage.close();
+            console.log(`✅ Job page closed`);
         }
+        console.log(`🏁 Finished applying to all jobs`);
     }
 
-async handleChatForm(page) {
-    try {
-        await page.waitForSelector('.chatbot_DrawerContentWrapper', { timeout: 3000 });
+    async handleChatForm(page) {
+        console.log(`🤖 Starting handleChatForm function`);
+        try {
+            console.log(`🔍 Waiting for chatbot drawer...`);
+            await page.waitForSelector('.chatbot_DrawerContentWrapper', { timeout: 3000 });
+            console.log(`✅ Chatbot drawer found`);
 
-        let attempt = 0;
-        const max = 10;
+            let attempt = 0;
+            const max = 10;
+            console.log(`⚙️ Will attempt to handle up to ${max} chat interactions`);
 
-        while (await page.$('.chatbot_DrawerContentWrapper') !== null && attempt < max) {
-            const question = await page.evaluate(() => {
-                const items = Array.from(document.querySelectorAll('.chatbot_ListItem'));
-                const last = items[items.length - 1];
-                const span = last?.querySelector('.botMsg span');
-                return span?.innerText.trim();
-            });
+            while (true) {
+                console.log(`\n🔄 Chat attempt ${attempt + 1}/${max}`);
 
-            if (!question) break;
-            console.log(`🤖 Bot asks: ${question}`);
+                // Check if chatbot is still present
+                const chatbotExists = await page.$('.chatbot_DrawerContentWrapper') !== null;
+                console.log(`🔍 Chatbot still exists: ${chatbotExists}`);
 
-            const radioBtns = await page.$$('.ssrc__radio-btn-container');
-            if (radioBtns.length > 0) {
-                const optionLabels = [];
-
-                for (const btn of radioBtns) {
-                    const label = await btn.$('label');
-                    const labelText = await page.evaluate(el => el.innerText.trim(), label);
-                    optionLabels.push(labelText);
+                if (!chatbotExists || attempt >= max) {
+                    console.log(`⏹️ Breaking chat loop: chatbotExists=${chatbotExists}, attempt=${attempt}, max=${max}`);
+                    break;
                 }
 
-                const answer = await this.bot.askOneLine(question, optionLabels);
-                console.log(`🎯 Bot chose: ${answer}`);
+                // Get the current question
+                console.log(`🔍 Retrieving latest bot question...`);
+                const question = await page.evaluate(() => {
+                    const items = Array.from(document.querySelectorAll('.chatbot_ListItem'));
+                    console.log(`Found ${items.length} chat items`);
 
-                let clicked = false;
-                for (let i = 0; i < optionLabels.length; i++) {
-                    if (optionLabels[i].toLowerCase() === answer.toLowerCase()) {
-                        const label = await radioBtns[i].$('label');
-                        if (label) {
-                            await label.click();
-                            clicked = true;
-                            console.log(`✅ Clicked radio: ${optionLabels[i]}`);
-                            break;
+                    if (items.length === 0) return null;
+
+                    const last = items[items.length - 1];
+                    const span = last?.querySelector('.botMsg span');
+                    return span?.innerText?.trim() || null;
+                });
+
+                console.log(`🔍 Question found: ${question !== null}`);
+                if (!question) {
+                    console.log(`⚠️ No question found, breaking loop`);
+                    break;
+                }
+
+                console.log(`🤖 Bot asks: ${question}`);
+
+                // Check for radio buttons
+                console.log(`🔍 Checking for radio buttons...`);
+                const radioBtns = await page.$$('.ssrc__radio-btn-container');
+                console.log(`🔍 Found ${radioBtns.length} radio buttons`);
+
+                if (radioBtns.length > 0) {
+                    console.log(`🔘 Processing radio button options...`);
+                    const optionLabels = [];
+
+                    for (let i = 0; i < radioBtns.length; i++) {
+                        const btn = radioBtns[i];
+                        const label = await btn.$('label');
+
+                        if (!label) {
+                            console.log(`⚠️ No label found for radio button ${i + 1}`);
+                            continue;
+                        }
+
+                        const labelText = await page.evaluate(el => el.innerText.trim(), label);
+                        optionLabels.push(labelText);
+                        console.log(`🔘 Option ${i + 1}: "${labelText}"`);
+                    }
+
+                    console.log(`🧠 Asking bot for choice among ${optionLabels.length} options...`);
+                    const answer = await this.bot.askOneLine(question, optionLabels);
+                    console.log(`🎯 Bot chose: "${answer}"`);
+
+                    let clicked = false;
+                    for (let i = 0; i < optionLabels.length; i++) {
+                        console.log(`🔍 Comparing "${optionLabels[i].toLowerCase()}" with "${answer.toLowerCase()}"`);
+
+                        if (optionLabels[i].toLowerCase() === answer.toLowerCase()) {
+                            console.log(`✅ Match found at option ${i + 1}`);
+                            const label = await radioBtns[i].$('label');
+
+                            if (label) {
+                                console.log(`👆 Clicking on option: "${optionLabels[i]}"`);
+                                await label.click();
+                                clicked = true;
+                                console.log(`✅ Clicked radio: ${optionLabels[i]}`);
+                                break;
+                            } else {
+                                console.log(`⚠️ Label element not found for matched option`);
+                            }
                         }
                     }
-                }
 
-                if (!clicked) {
-                    console.log(`❌ No match found. Selecting first option.`);
-                    const firstLabel = await radioBtns[0].$('label');
-                    if (firstLabel) await firstLabel.click();
-                }
+                    if (!clicked) {
+                        console.log(`❌ No match found. Selecting first option instead.`);
+                        const firstLabel = await radioBtns[0].$('label');
 
-                // ✅ Save after selection (if button exists)
-                const saveBtn = await page.$('.sendMsg');
-                if (saveBtn) {
-                    await saveBtn.click();
-                    console.log('📩 Clicked Save after selecting radio');
-                }
-            } else if (await page.$('input[type="checkbox"]')) {
-                const checkbox = await page.$('input[type="checkbox"]');
-                if (checkbox) {
-                    await checkbox.click();
-                    console.log('✅ Checkbox selected');
-                }
-            } else {
-                const answer = await this.bot.ask(question);
-                console.log(`💬 Bot (text): ${answer}`);
-
-                await page.evaluate((val) => {
-                    const input = document.querySelector('div[contenteditable="true"]');
-                    if (input) {
-                        input.innerText = val;
-                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                        if (firstLabel) {
+                            await firstLabel.click();
+                            console.log(`✅ Clicked first radio option as fallback`);
+                        } else {
+                            console.log(`⚠️ Could not find first label element`);
+                        }
                     }
-                }, answer);
-                await page.keyboard.press('Enter');
+
+                    // Check for Save button
+                    console.log(`🔍 Looking for save button...`);
+                    const saveBtn = await page.$('.sendMsg');
+                    console.log(`🔍 Save button exists: ${saveBtn !== null}`);
+
+                    if (saveBtn) {
+                        console.log(`👆 Clicking save button...`);
+                        await saveBtn.click();
+                        console.log('📩 Clicked Save after selecting radio');
+                    } else {
+                        console.log(`⚠️ No save button found after radio selection`);
+                    }
+                }
+                // Check for checkboxes
+                else if (await page.$('input[type="checkbox"]')) {
+                    console.log(`✓ Checkbox detected`);
+                    const checkbox = await page.$('input[type="checkbox"]');
+
+                    if (checkbox) {
+                        console.log(`👆 Clicking checkbox...`);
+                        await checkbox.click();
+                        console.log('✅ Checkbox selected');
+                    } else {
+                        console.log(`⚠️ Checkbox disappeared before clicking`);
+                    }
+                }
+                // Handle text input
+                else {
+                    console.log(`📝 Text input required, asking bot for response...`);
+                    const answer = await this.bot.ask(question);
+                    console.log(`💬 Bot (text): ${answer}`);
+
+                    console.log(`🔍 Looking for contenteditable div...`);
+                    const inputExists = await page.$('div[contenteditable="true"]') !== null;
+                    console.log(`🔍 Contenteditable div exists: ${inputExists}`);
+
+                    if (!inputExists) {
+                        console.log(`⚠️ No contenteditable div found for text input`);
+                    }
+
+                    console.log(`📝 Setting text value...`);
+                    await page.evaluate((val) => {
+                        const input = document.querySelector('div[contenteditable="true"]');
+                        if (input) {
+                            console.log(`✅ Found contenteditable element, setting text`);
+                            input.innerText = val;
+                            input.dispatchEvent(new Event('input', { bubbles: true }));
+                            return true;
+                        } else {
+                            console.log(`❌ Could not find contenteditable element`);
+                            return false;
+                        }
+                    }, answer);
+
+                    console.log(`⌨️ Pressing Enter key...`);
+                    await page.keyboard.press('Enter');
+                    console.log(`✅ Enter key pressed`);
+                }
+
+                attempt++;
+                console.log(`⏳ Waiting 3 seconds for chatbot to process...`);
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                console.log(`✅ Finished waiting`);
             }
 
-            attempt++;
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            console.log("✅ Chatbot interaction completed");
+            console.log(`⏳ Waiting 5 seconds for final page load...`);
+            await new Promise(resolve => setTimeout(resolve, 10000));
+            console.log(`✅ Finished waiting`);
+
+            return page;
+        } catch (e) {
+            console.log("⚠️ Chatbot handling failed:", e.message);
+            console.log(`📚 Error stack: ${e.stack}`);
+            return page; // Return the page even if an error occurred
         }
-        console.log("✅ Chatbot finished");
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        return page
-    } catch (e) {
-        console.log("⚠️ Chatbot handling failed:", e.message);
     }
-}
 
     createNotification(job) {
         return `📢 *Job Applied Successfully!*
