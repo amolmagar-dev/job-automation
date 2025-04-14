@@ -1,6 +1,4 @@
 // routes/jobConfigRoutes.js
-// import { trainYourBot } from '../../scraper/naukri/index.js';
-import { downloadNaukriResumeGenerateUserProfilePromt } from '../../scraper/naukri/utils/utils.js';
 import logger from '../../utils/logger.js';
 
 /**
@@ -355,21 +353,15 @@ export default async function jobConfigRoutes(fastify, options) {
                 });
             }
 
-            // Here you would connect to the portal using the credentials
-            // and fetch the user's profile data
-            const generatedDescription = await downloadNaukriResumeGenerateUserProfilePromt(credential);
-
-            // In a real implementation, this would connect to the portal and fetch profile data
-            // For demo purposes, we'll generate a mock profile description
-            
-
-            logger.info(`Analyzing profile for user ${userId} from ${portal || 'naukri'} portal`);
+            // Generate profile from resume
+            const { generateProfileFromNaukriResume } = await import('../services/analyzeProfileService.js');
+            const generatedDescription = await generateProfileFromNaukriResume(credential);
 
             // Update the AI training data with the generated description
-
             const aiTrainingData = {
                 aiTraining: {
                     selfDescription: generatedDescription,
+                    source: portal || 'naukri',
                     updatedAt: new Date()
                 }
             };
@@ -381,6 +373,7 @@ export default async function jobConfigRoutes(fastify, options) {
                 message: 'Profile analyzed successfully',
                 aiTraining: aiTrainingData.aiTraining
             };
+
         } catch (error) {
             logger.error(`Error analyzing profile: ${error.message}`);
             return reply.code(500).send({

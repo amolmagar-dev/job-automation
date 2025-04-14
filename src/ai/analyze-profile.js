@@ -5,7 +5,16 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import dotenv from 'dotenv';
 dotenv.config();
 
-export async function downloadAndSendResumeToGemini(page) {
+export async function downloadAndSendResumeToGemini(page, credentials) {
+    await page.goto('https://www.naukri.com/', { waitUntil: 'networkidle2' });
+    await page.click("a[title='Jobseeker Login']");
+    await page.waitForSelector("input[type='text']");
+
+    await page.type("input[type='text']", credentials.username, { delay: 150 });
+    await page.type("input[type='password']", credentials.password, { delay: 150 });
+    await page.click("button[type='submit']");
+    await page.waitForNavigation({ waitUntil: 'networkidle2' });
+
     await page.goto('https://www.naukri.com/mnjuser/profile', { waitUntil: 'networkidle2' });
     await page.waitForSelector('.nI-gNb-sb__main', { visible: true });
 
