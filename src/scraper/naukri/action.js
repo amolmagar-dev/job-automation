@@ -40,7 +40,7 @@ export async function loginToNaukri(page) {
   console.log('✅ Session cookies saved.');
 }
 
-export async function downloadResume(page) {
+export async function downloadResume(page , username='none') {
   await page.goto('https://www.naukri.com/mnjuser/profile', { waitUntil: 'networkidle2' });
   await page.waitForSelector('.nI-gNb-sb__main', { visible: true });
   // Scroll back to top before capturing PDF
@@ -49,7 +49,7 @@ export async function downloadResume(page) {
   });
   const cacheDir = path.resolve('cache');
   fs.mkdirSync(cacheDir, { recursive: true });
-  const pdfPath = path.join(cacheDir, 'resume-profile.pdf');
+  const pdfPath = path.join(cacheDir, `${username}_resume-profile.pdf`);
   await page.pdf({
     path: pdfPath,
     format: 'A4',

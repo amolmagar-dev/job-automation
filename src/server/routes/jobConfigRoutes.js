@@ -1,4 +1,6 @@
 // routes/jobConfigRoutes.js
+// import { trainYourBot } from '../../scraper/naukri/index.js';
+import { downloadNaukriResumeGenerateUserProfilePromt } from '../../scraper/naukri/utils/utils.js';
 import logger from '../../utils/logger.js';
 
 /**
@@ -344,7 +346,7 @@ export default async function jobConfigRoutes(fastify, options) {
             }
 
             // Get portal credentials
-            const credential = await fastify.portalCredentialModel.getCredential(userId, portal || 'naukri');
+            const credential = await fastify.portalCredentialModel.getLoginCredentials(userId, portal || 'naukri');
 
             if (!credential) {
                 return reply.code(400).send({
@@ -353,39 +355,21 @@ export default async function jobConfigRoutes(fastify, options) {
                 });
             }
 
+            // Here you would connect to the portal using the credentials
+            // and fetch the user's profile data
+            const generatedDescription = await downloadNaukriResumeGenerateUserProfilePromt(credential);
+
             // In a real implementation, this would connect to the portal and fetch profile data
             // For demo purposes, we'll generate a mock profile description
+            
 
             logger.info(`Analyzing profile for user ${userId} from ${portal || 'naukri'} portal`);
 
-            // Simulate AI profile analysis
-            const profileData = {
-                skills: ['JavaScript', 'React', 'Node.js', 'MongoDB', 'API Development'],
-                experience: [
-                    {
-                        title: 'Senior Developer',
-                        company: 'Tech Solutions Inc.',
-                        duration: '3 years'
-                    },
-                    {
-                        title: 'Web Developer',
-                        company: 'Digital Creations',
-                        duration: '2 years'
-                    }
-                ],
-                education: 'B.Tech in Computer Science',
-                achievements: 'Reduced application load time by 40%'
-            };
-
-            // Generate a self description from the profile data
-            const generatedDescription = `I am a full-stack developer with 5+ years of experience specializing in JavaScript, React, Node.js, and MongoDB. In my current role as Senior Developer at Tech Solutions Inc. for the past 3 years, I've led development projects that improved application performance by 40%. Previously, I worked as a Web Developer at Digital Creations for 2 years. I have a B.Tech in Computer Science and enjoy solving complex technical challenges.`;
-
             // Update the AI training data with the generated description
+
             const aiTrainingData = {
                 aiTraining: {
                     selfDescription: generatedDescription,
-                    profileData: profileData,
-                    source: portal || 'naukri',
                     updatedAt: new Date()
                 }
             };
