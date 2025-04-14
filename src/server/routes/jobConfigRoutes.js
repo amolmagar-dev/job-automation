@@ -344,7 +344,7 @@ export default async function jobConfigRoutes(fastify, options) {
             }
 
             // Get portal credentials
-            const credential = await fastify.portalCredentialModel.findByPortal(userId, portal || 'naukri');
+            const credential = await fastify.portalCredentialModel.getCredential(userId, portal || 'naukri');
 
             if (!credential) {
                 return reply.code(400).send({
