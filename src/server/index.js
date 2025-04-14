@@ -17,6 +17,7 @@ import jobConfigRoutes from './routes/jobConfigRoutes.js';
 import portalCredentialPlugin from './plugins/portalCredentialPlugin.js';
 import portalCredentialRoutes from './routes/portalCredentialRoutes.js';
 import jobRunnerPlugin from './job/jobRunner.js';
+import jobApplicationRoutes from './routes/jobApplicationRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -112,6 +113,7 @@ await fastify.register(routes, { prefix: '/api' });
 await fastify.register(userRoutes, { prefix: '/api' });
 await fastify.register(jobConfigRoutes);
 await fastify.register(portalCredentialRoutes);
+await fastify.register(jobApplicationRoutes, { prefix: '/api' });
 // 
 
 

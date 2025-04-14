@@ -106,8 +106,25 @@ class JobRunner {
             switch (frequency) {
                 case 'daily':
                     return `${minutes} ${hours} * * *`;
+
+                case 'weekly':
+                    if (!days || !Array.isArray(days) || days.length === 0) {
+                        return null;
+                    }
+                    // Convert days array to cron day expression (0-6, where 0 is Sunday)
+                    const weekDays = days.join(',');
+                    return `${minutes} ${hours} * * ${weekDays}`;
+
+                case 'custom':
+                    if (!days || !Array.isArray(days) || days.length === 0) {
+                        return null;
+                    }
+                    // For custom schedule, treat days as days of week
+                    const customDays = days.join(',');
+                    return `${minutes} ${hours} * * ${customDays}`;
+
                 default:
-                    return `*/10 * * * * *`;
+                    return null;
             }
         } catch (error) {
             this.app.log.error({ err: error }, 'Error calculating cron expression');
