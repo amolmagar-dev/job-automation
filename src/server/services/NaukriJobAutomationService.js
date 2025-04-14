@@ -2,11 +2,10 @@ import dotenv from 'dotenv';
 import { GeminiBot } from '../../ai/GeminiBot.js';
 import { notifyAll } from '../../../notifier/index.js';
 
-
 dotenv.config();
 
 export class NaukriJobAutomation {
-    constructor(browser, jobConfig, fastify , user, credentials) {
+    constructor(browser, jobConfig, fastify, user, credentials) {
         this.browser = browser;
         this.fastify = fastify;
         this.user = user;
@@ -190,6 +189,7 @@ export class NaukriJobAutomation {
 
     async applyForJobs(jobs) {
         console.log(`🔄 Starting to apply for ${jobs.length} jobs`);
+        const appliedJobs = [];
 
         for (const job of jobs) {
             console.log(`\n==================================`);
@@ -246,6 +246,10 @@ export class NaukriJobAutomation {
                         console.log(`📣 Creating notification for job: ${job.title}`);
                         notifyAll(this.createNotification(job));
                         console.log(`✅ ${success}`);
+
+                        // Save successful application to MongoDB
+                        await this.saveJobApplication(job);
+                        appliedJobs.push(job);
                     } else {
                         console.log(`⚠️ No success message found after chatbot interaction`);
                     }
@@ -274,6 +278,10 @@ export class NaukriJobAutomation {
                         console.log(`📣 Creating notification for job: ${job.title}`);
                         notifyAll(this.createNotification(job));
                         console.log(`✅ ${success}`);
+
+                        // Save successful application to MongoDB
+                        await this.saveJobApplication(job);
+                        appliedJobs.push(job);
                     }
                     else console.log("🤷 Unknown apply result - no success message detected");
                 }
@@ -287,7 +295,53 @@ export class NaukriJobAutomation {
             await jobPage.close();
             console.log(`✅ Job page closed`);
         }
-        console.log(`🏁 Finished applying to all jobs`);
+        console.log(`🏁 Finished applying to all jobs. Successfully applied to ${appliedJobs.length} jobs.`);
+        return appliedJobs;
+    }
+
+    async saveJobApplication(job) {
+        try {
+            console.log(`💾 Saving job application to database: ${job.title} at ${job.company}`);
+
+            const jobData = {
+                title: job.title,
+                company: job.company,
+                location: job.location || 'N/A',
+                experience: job.experience || 'N/A',
+                salary: job.salary || 'N/A',
+                rating: job.rating || 'N/A',
+                reviews: job.reviews || 'No',
+                postedOn: job.postedOn || 'N/A',
+                description: job.description || 'No description available',
+                skills: job.skills || [],
+                applyLink: job.applyLink || 'N/A',
+                portal: 'Naukri', // Setting the portal as Naukri
+                userId: this.user._id.toString(), // Using the user ID from the constructor
+                status: 'Applied',
+                notes: `Applied via automation on ${new Date().toLocaleString()}`,
+                applicationId: `NK-${Date.now().toString(36)}-${Math.random().toString(36).substr(2, 5)}`.toUpperCase()
+            };
+
+            // Check if the fastify instance has the jobApplicationModel decorator
+            if (this.fastify && this.fastify.jobApplicationModel) {
+                const result = await this.fastify.jobApplicationModel.create(jobData);
+                console.log(`✅ Job application saved to database with ID: ${result.insertedId}`);
+                return result.insertedId;
+            } else {
+                console.warn(`⚠️ No jobApplicationModel found on fastify instance, saving directly to collection`);
+                // Fallback: save directly to the MongoDB collection if plugin is not registered
+                const result = await this.fastify.mongo.db.collection('jobApplications').insertOne({
+                    ...jobData,
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                });
+                console.log(`✅ Job application saved to database with ID: ${result.insertedId}`);
+                return result.insertedId;
+            }
+        } catch (error) {
+            console.error(`❌ Error saving job application to database:`, error);
+            throw error;
+        }
     }
 
     async handleChatForm(page) {
@@ -459,7 +513,7 @@ export class NaukriJobAutomation {
             }
 
             console.log("✅ Chatbot interaction completed");
-            console.log(`⏳ Waiting 5 seconds for final page load...`);
+            console.log(`⏳ Waiting 10 seconds for final page load...`);
             await new Promise(resolve => setTimeout(resolve, 10000));
             console.log(`✅ Finished waiting`);
 
@@ -481,6 +535,8 @@ export class NaukriJobAutomation {
 💰 *Salary:* ${job.salary || 'N/A'}
 ⭐ *Rating:* ${job.rating || 'N/A'} (${job.reviews || 'No'} reviews)
 📅 *Posted On:* ${job.postedOn || 'N/A'}
+🌐 *Portal:* Naukri
+👤 *User:* ${this.user.firstName} ${this.user.lastName}
 
 📝 *Description:* ${job.description || 'No description available'}
 
@@ -525,12 +581,13 @@ export class NaukriJobAutomation {
 
             const jobs = await this.scrapePaginatedJobs(page, currentUrl, userPrefs);
 
+            let appliedJobs = [];
             if (jobs.length === 0) {
                 console.log('No jobs found for the given criteria');
             } else {
                 console.log(`Found ${jobs.length} jobs matching criteria`);
                 console.log('Applying for jobs...');
-                await this.applyForJobs(jobs);
+                appliedJobs = await this.applyForJobs(jobs);
             }
 
             // Update job config with last run details
@@ -548,15 +605,40 @@ export class NaukriJobAutomation {
                     this.jobConfig.schedule.nextRun = nextWeek;
                 }
 
+                // Save updated job config to database
+                if (this.fastify && this.fastify.mongo) {
+                    try {
+                        const result = await this.fastify.mongo.db.collection('jobConfigs').updateOne(
+                            { _id: this.jobConfig._id },
+                            {
+                                $set: {
+                                    'schedule.lastRun': this.jobConfig.schedule.lastRun,
+                                    'schedule.nextRun': this.jobConfig.schedule.nextRun,
+                                    'lastRunStats': {
+                                        jobsFound: jobs.length,
+                                        jobsApplied: appliedJobs.length,
+                                        timestamp: new Date()
+                                    }
+                                }
+                            }
+                        );
+                        console.log(`✅ Job config updated in database: ${result.modifiedCount} document modified`);
+                    } catch (dbError) {
+                        console.error(`❌ Error updating job config:`, dbError);
+                    }
+                }
+
                 console.log(`✅ Job automation completed. Next run scheduled for: ${this.jobConfig.schedule.nextRun}`);
             }
 
             await page.close();
-            await this.browser.closeBrowser()
+            await this.browser.closeBrowser();
+
             return {
                 success: true,
-                message: `Job search completed. Found ${jobs.length} matching jobs.`,
-                jobsApplied: jobs.length
+                message: `Job search completed. Found ${jobs.length} matching jobs, applied to ${appliedJobs.length}.`,
+                jobsFound: jobs.length,
+                jobsApplied: appliedJobs.length
             };
         } catch (err) {
             console.error('Error during automation:', err);
