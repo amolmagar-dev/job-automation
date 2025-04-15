@@ -1,6 +1,5 @@
 // DashboardSummary.jsx
 import React from 'react';
-import './DashboardSummary.css';
 
 const DashboardSummary = () => {
   // Mock data for dashboard stats and recent applications

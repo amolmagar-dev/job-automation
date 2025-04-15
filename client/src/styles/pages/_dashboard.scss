@@ -1,0 +1,431 @@
+// Dashboard styles
+.dashboard-summary {
+    width: 100%;
+    animation: page-enter 0.3s ease-out;
+}
+
+// Metrics Cards
+.metrics-container {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: $spacing-5;
+    margin-bottom: $spacing-6;
+
+    @include respond-to(lg) {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    @include respond-to(sm) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.metric-card {
+    background-color: var(--background-secondary);
+    border-radius: $border-radius-lg;
+    padding: $spacing-5;
+    border: 1px solid var(--border-color);
+    transition: transform $transition-normal, box-shadow $transition-normal;
+
+    &:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 15px var(--shadow-color);
+    }
+
+    h3 {
+        font-size: $font-size-sm;
+        color: var(--text-tertiary);
+        margin-bottom: $spacing-3;
+        font-weight: 500;
+    }
+
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: $spacing-2;
+    }
+
+    .metric-label {
+        font-size: $font-size-xs;
+        color: var(--text-tertiary);
+    }
+
+    &.with-icon {
+        display: flex;
+        align-items: flex-start;
+
+        .metric-icon {
+            margin-right: $spacing-4;
+            background-color: rgba($primary-color, 0.1);
+            color: var(--primary-color);
+            border-radius: $border-radius-md;
+            padding: $spacing-2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .metric-content {
+            flex: 1;
+        }
+    }
+
+    .metric-trend {
+        display: flex;
+        align-items: center;
+        margin-top: $spacing-2;
+        font-size: $font-size-xs;
+
+        &.positive {
+            color: var(--success-color);
+        }
+
+        &.negative {
+            color: var(--error-color);
+        }
+
+        .trend-icon {
+            margin-right: $spacing-1;
+        }
+    }
+}
+
+// Quick Actions
+.quick-actions {
+    display: flex;
+    gap: $spacing-3;
+    margin-bottom: $spacing-8;
+
+    @include respond-to(md) {
+        flex-direction: column;
+    }
+
+    .action-button {
+        @include button-base;
+        padding: $spacing-3 $spacing-4;
+        font-size: $font-size-sm;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+
+        .button-icon {
+            margin-right: $spacing-2;
+        }
+
+        &.primary {
+            @include primary-button;
+        }
+
+        &.secondary {
+            @include secondary-button;
+        }
+    }
+}
+
+// Section Card (used for recent applications, charts, etc.)
+.section-card {
+    background-color: var(--background-secondary);
+    border-radius: $border-radius-lg;
+    padding: $spacing-5;
+    margin-bottom: $spacing-8;
+    border: 1px solid var(--border-color);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: $spacing-4;
+
+    h2 {
+        font-size: $font-size-lg;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .view-all {
+        font-size: $font-size-sm;
+        color: var(--primary-color);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+
+        .icon {
+            margin-left: $spacing-1;
+        }
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+}
+
+// Applications Table
+.applications-table {
+    width: 100%;
+
+    .table-header {
+        display: grid;
+        grid-template-columns: 2fr 2fr 1fr 1fr 1fr;
+        padding: $spacing-3 $spacing-4;
+        border-bottom: 1px solid var(--border-color);
+        font-weight: 500;
+        color: var(--text-tertiary);
+        font-size: $font-size-xs;
+
+        @include respond-to(md) {
+            grid-template-columns: 2fr 2fr 1fr;
+        }
+    }
+
+    .table-row {
+        display: grid;
+        grid-template-columns: 2fr 2fr 1fr 1fr 1fr;
+        padding: $spacing-4;
+        border-bottom: 1px solid var(--border-color);
+        align-items: center;
+        transition: background-color $transition-fast;
+
+        @include respond-to(md) {
+            grid-template-columns: 2fr 2fr 1fr;
+        }
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        &:hover {
+            background-color: var(--background-tertiary);
+        }
+    }
+
+    .table-cell {
+        font-size: $font-size-sm;
+    }
+
+    .company-cell {
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+
+    .position-cell {
+        color: var(--text-secondary);
+    }
+
+    .platform-cell,
+    .date-cell {
+        color: var(--text-tertiary);
+        font-size: $font-size-xs;
+
+        @include respond-to(md) {
+            display: none;
+        }
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: $spacing-1 $spacing-2;
+        border-radius: $border-radius-md;
+        font-size: $font-size-xs;
+        font-weight: 500;
+    }
+}
+
+// Service Cards
+.services-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: $spacing-5;
+    margin-bottom: $spacing-6;
+
+    @include respond-to(lg) {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    @include respond-to(sm) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.service-card {
+    background-color: var(--background-secondary);
+    border-radius: $border-radius-lg;
+    padding: $spacing-6;
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: transform $transition-normal, box-shadow $transition-normal;
+
+    &:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 15px var(--shadow-color);
+    }
+
+    .service-icon {
+        font-size: $font-size-2xl;
+        margin-bottom: $spacing-4;
+        background-color: rgba($primary-color, 0.1);
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary-color);
+    }
+
+    h3 {
+        font-size: $font-size-lg;
+        font-weight: 600;
+        margin-bottom: $spacing-2;
+        color: var(--text-primary);
+    }
+
+    p {
+        color: var(--text-tertiary);
+        font-size: $font-size-sm;
+        margin-bottom: $spacing-4;
+    }
+
+    .service-button {
+        @include secondary-button;
+        width: 100%;
+        font-size: $font-size-sm;
+        padding: $spacing-2 $spacing-4;
+
+        &:hover {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+    }
+}
+
+// Charts section
+.charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: $spacing-5;
+    margin-bottom: $spacing-8;
+
+    @include respond-to(md) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.chart-container {
+    background-color: var(--background-secondary);
+    border-radius: $border-radius-lg;
+    padding: $spacing-5;
+    border: 1px solid var(--border-color);
+    height: 350px;
+
+    .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: $spacing-5;
+
+        h3 {
+            font-size: $font-size-base;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .chart-actions {
+            display: flex;
+            gap: $spacing-2;
+        }
+    }
+
+    .chart-wrapper {
+        height: calc(100% - 40px);
+        width: 100%;
+    }
+}
+
+// Status filters
+.status-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-2;
+    margin-bottom: $spacing-5;
+
+    .status-filter {
+        padding: $spacing-2 $spacing-3;
+        border-radius: $border-radius-full;
+        font-size: $font-size-xs;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all $transition-fast;
+
+        &.active {
+            color: white;
+        }
+
+        &:hover:not(.active) {
+            opacity: 0.8;
+        }
+    }
+}
+
+// Placeholder section
+.placeholder-section {
+    background-color: var(--background-secondary);
+    border-radius: $border-radius-lg;
+    border: 1px solid var(--border-color);
+    padding: 100px $spacing-6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--text-tertiary);
+    font-size: $font-size-lg;
+    font-weight: 500;
+}
+
+// Loading states
+.loading-skeleton {
+    background: linear-gradient(90deg,
+            var(--background-tertiary) 25%,
+            var(--background-secondary) 50%,
+            var(--background-tertiary) 75%);
+    background-size: 200% 100%;
+    animation: loading-skeleton 1.5s ease-in-out infinite;
+    border-radius: $border-radius-md;
+
+    &.title {
+        height: 24px;
+        width: 150px;
+        margin-bottom: $spacing-4;
+    }
+
+    &.text {
+        height: 16px;
+        width: 100%;
+        margin-bottom: $spacing-2;
+
+        &:last-child {
+            width: 80%;
+        }
+    }
+
+    &.metric {
+        height: 40px;
+        width: 70px;
+        margin-bottom: $spacing-2;
+    }
+}
+
+@keyframes loading-skeleton {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
