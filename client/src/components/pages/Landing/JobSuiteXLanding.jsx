@@ -12,7 +12,6 @@ import {
     Users,
     Award
 } from 'lucide-react';
-import './JobSuiteXLanding.css';
 
 const JobSuiteXLanding = () => {
     const navigate = useNavigate();
