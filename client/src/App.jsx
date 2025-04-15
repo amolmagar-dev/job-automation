@@ -3,6 +3,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import JobSuiteXLanding from './components/pages/Landing/JobSuiteXLanding';
 import Dashboard from './components/pages/Dashboard/JobSuiteXDashboard';
 import './App.css';
@@ -24,6 +25,7 @@ const ProtectedRoute = ({ children }) => {
 
 function AppRoutes() {
   return (
+    <ThemeProvider>
     <Routes>
       <Route path="/" element={<JobSuiteXLanding />} />
       <Route
@@ -37,6 +39,7 @@ function AppRoutes() {
       {/* Add more routes here as needed */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </ThemeProvider>
   );
 }
 

@@ -1,6 +1,6 @@
 // components/pages/Dashboard/JobSuiteXDashboard.jsx
 import React, { useState } from 'react';
-import DashboardLayout from '../../layout/DashboardLayout';
+import Layout from '../../layout/Layout.jsx';
 import DashboardSummary from './DashboardSummary.jsx';
 import ServiceManagement from '../service_management/ServiceManagement.jsx';
 import AutoJobApplication from '../service_management/AutoJobApplication.jsx';
@@ -32,9 +32,9 @@ const JobSuiteXDashboard = () => {
     };
 
     return (
-        <DashboardLayout activePage={activePage} onNavigate={setActivePage}>
+        <Layout activePage={activePage} onNavigate={setActivePage}>
             {renderContent()}
-        </DashboardLayout>
+        </Layout>
     );
 };
 
