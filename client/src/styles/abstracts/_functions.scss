@@ -1,0 +1,49 @@
+// Convert px to rem
+@function rem($pixels, $context: 16) {
+    @return ($pixels / $context) * 1rem;
+}
+
+// Calculate the contrast color (black or white) for a given background color
+@function contrast-color($color) {
+    $r: red($color);
+    $g: green($color);
+    $b: blue($color);
+
+    $yiq: (
+        ($r * 299) + ($g * 587) + ($b * 114)) / 1000;
+
+    @if ($yiq >=128) {
+        @return #000000;
+    }
+
+    @else {
+        @return #ffffff;
+    }
+}
+
+// Lighten or darken a color based on a percentage
+@function adjust-color($color, $percent) {
+    @if ($percent > 0) {
+        @return lighten($color, $percent
+    );
+}
+
+@else {
+    @return darken($color, abs($percent));
+}
+}
+
+// Create a tint of a color (mix with white)
+@function tint($color, $percentage) {
+    @return mix(white, $color, $percentage);
+}
+
+// Create a shade of a color (mix with black)
+@function shade($color, $percentage) {
+    @return mix(black, $color, $percentage);
+}
+
+// Convert a hex color to RGBA
+@function to-rgba($color, $opacity) {
+    @return rgba($color, $opacity);
+}

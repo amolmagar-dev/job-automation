@@ -1,0 +1,149 @@
+// Responsive breakpoints
+@mixin respond-to($breakpoint) {
+    @if $breakpoint ==sm {
+        @media (max-width: $breakpoint-sm) {
+            @content;
+        }
+    }
+
+    @else if $breakpoint ==md {
+        @media (max-width: $breakpoint-md) {
+            @content;
+        }
+    }
+
+    @else if $breakpoint ==lg {
+        @media (max-width: $breakpoint-lg) {
+            @content;
+        }
+    }
+
+    @else if $breakpoint ==xl {
+        @media (max-width: $breakpoint-xl) {
+            @content;
+        }
+    }
+}
+
+// Flexbox layouts
+@mixin flex($direction: row, $justify: flex-start, $align: flex-start, $wrap: nowrap) {
+    display: flex;
+    flex-direction: $direction;
+    justify-content: $justify;
+    align-items: $align;
+    flex-wrap: $wrap;
+}
+
+// Grid layouts
+@mixin grid($columns: 1fr, $gap: $spacing-4) {
+    display: grid;
+    grid-template-columns: $columns;
+    gap: $gap;
+}
+
+// Typography
+@mixin heading-1 {
+    font-size: $font-size-3xl;
+    font-weight: 700;
+    line-height: 1.1;
+
+    @include respond-to(lg) {
+        font-size: $font-size-2xl;
+    }
+
+    @include respond-to(sm) {
+        font-size: 32px;
+    }
+}
+
+@mixin heading-2 {
+    font-size: $font-size-xl;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+@mixin body-text {
+    font-size: $font-size-base;
+    line-height: 1.5;
+}
+
+@mixin small-text {
+    font-size: $font-size-sm;
+    line-height: 1.6;
+}
+
+// Component Styles
+@mixin card {
+    background-color: var(--background-secondary);
+    border-radius: $border-radius-lg;
+    padding: $spacing-6;
+    box-shadow: 0 4px 6px var(--shadow-color);
+}
+
+@mixin button-base {
+    padding: $spacing-3 $spacing-6;
+    border-radius: $border-radius-md;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: background-color $transition-fast, transform $transition-fast;
+
+    &:hover {
+        transform: translateY(-1px);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+}
+
+@mixin primary-button {
+    @include button-base;
+    background-color: var(--primary-color);
+    color: white;
+
+    &:hover {
+        background-color: darken($primary-color, 5%);
+    }
+}
+
+@mixin secondary-button {
+    @include button-base;
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+
+    &:hover {
+        background-color: var(--background-tertiary);
+    }
+}
+
+// Form elements
+@mixin form-input {
+    width: 100%;
+    padding: $spacing-3 $spacing-4;
+    background-color: var(--input-background);
+    color: var(--text-primary);
+    border: 1px solid transparent;
+    border-radius: $border-radius-md;
+    font-size: $font-size-base;
+    transition: border-color $transition-fast, box-shadow $transition-fast;
+
+    &:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba($primary-color, 0.25);
+    }
+
+    &::placeholder {
+        color: var(--text-muted);
+    }
+}
+
+// Other common patterns
+@mixin gradient-text {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}

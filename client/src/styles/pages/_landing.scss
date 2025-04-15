@@ -1,0 +1,415 @@
+// Landing page specific styles
+.landing-container {
+    display: flex;
+    min-height: 100vh;
+
+    @include respond-to(md) {
+        flex-direction: column;
+    }
+}
+
+// Marketing section (left side)
+.marketing-section {
+    flex: 1;
+    background-color: var(--background-primary);
+    color: var(--text-primary);
+    padding: $spacing-8;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    @include respond-to(lg) {
+        padding: $spacing-6;
+    }
+
+    @include respond-to(md) {
+        padding: $spacing-6;
+        min-height: auto;
+    }
+
+    @include respond-to(sm) {
+        padding: $spacing-4;
+    }
+}
+
+.logo-wrapper {
+    display: flex;
+    align-items: center;
+    margin-bottom: $spacing-8;
+}
+
+.briefcase-icon {
+    width: 24px;
+    height: 24px;
+    color: #b392f0;
+    margin-right: $spacing-2;
+}
+
+.logo-text {
+    font-size: $font-size-lg;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.marketing-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    max-width: 600px;
+
+    @include respond-to(md) {
+        max-width: 100%;
+    }
+}
+
+.main-heading {
+    @include heading-1;
+    margin-bottom: $spacing-6;
+}
+
+.marketing-description {
+    font-size: $font-size-lg;
+    color: var(--text-tertiary);
+    margin-bottom: $spacing-8;
+
+    @include respond-to(sm) {
+        font-size: $font-size-base;
+    }
+}
+
+// Features carousel
+.features-container {
+    position: relative;
+    margin: $spacing-6 0 $spacing-8;
+    height: 220px;
+
+    @include respond-to(md) {
+        height: 240px;
+    }
+
+    @include respond-to(sm) {
+        height: 260px;
+    }
+}
+
+.features-carousel {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+.feature-card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: $spacing-6;
+    background-color: rgba(39, 37, 37, 0.05);
+    border-radius: $border-radius-xl;
+    border-left: 4px solid var(--feature-color, var(--primary-color));
+    backdrop-filter: blur(50px);
+    transition: all $transition-slow;
+    animation: fadeIn $transition-slow ease-out forwards;
+    animation-delay: calc(var(--index, 0) * 0.1s);
+
+    @include respond-to(sm) {
+        padding: $spacing-4;
+    }
+
+    &.active {
+        z-index: 2;
+        box-shadow: 0 8px 24px var(--shadow-color);
+    }
+}
+
+.feature-icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: $border-radius-xl;
+    margin-bottom: $spacing-4;
+}
+
+.feature-icon {
+    width: 24px;
+    height: 24px;
+}
+
+.feature-title {
+    font-size: $font-size-lg;
+    font-weight: 600;
+    margin-bottom: $spacing-2;
+    color: var(--text-primary);
+}
+
+.feature-description {
+    font-size: $font-size-sm;
+    color: var(--text-tertiary);
+    line-height: 1.6;
+}
+
+.carousel-controls {
+    display: flex;
+    justify-content: center;
+    margin-top: $spacing-4;
+}
+
+// Benefits grid
+.benefits-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: $spacing-4;
+    margin-bottom: $spacing-8;
+
+    @include respond-to(lg) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.benefit-item {
+    display: flex;
+    align-items: center;
+    font-size: $font-size-sm;
+    color: var(--text-secondary);
+    animation: slideIn 0.4s ease-out forwards;
+    animation-delay: calc(var(--index, 0) * 0.1s);
+    opacity: 0;
+
+    &:nth-child(1) {
+        --index: 1;
+    }
+
+    &:nth-child(2) {
+        --index: 2;
+    }
+
+    &:nth-child(3) {
+        --index: 3;
+    }
+
+    &:nth-child(4) {
+        --index: 4;
+    }
+}
+
+.benefit-icon {
+    color: var(--success-color);
+    margin-right: $spacing-2;
+}
+
+// Trust indicator
+.trust-indicator {
+    margin-top: $spacing-2;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.trust-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-2;
+}
+
+.metric {
+    display: flex;
+    align-items: center;
+    font-size: $font-size-sm;
+    color: var(--text-tertiary);
+}
+
+.metric-icon {
+    margin-right: $spacing-2;
+    color: var(--primary-color);
+}
+
+.avatar-group {
+    display: flex;
+    align-items: center;
+}
+
+.avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #808080;
+    border: 2px solid var(--background-primary);
+    margin-right: -10px;
+}
+
+// Form section (right side)
+.form-section {
+    width: 450px;
+    background: linear-gradient(to bottom, var(--background-primary), var(--background-secondary));
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    @include respond-to(md) {
+        width: 100%;
+        padding: $spacing-6;
+    }
+}
+
+// Feature screenshots
+.feature-screenshot {
+    position: absolute;
+    top: 0;
+    right: -320px;
+    width: 300px;
+    height: 200px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: $border-radius-lg;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateX(20px);
+    transition: all $transition-normal;
+}
+
+.feature-card.active .feature-screenshot {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.feature-screenshot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+// Feature highlight effects
+.feature-highlight {
+    position: absolute;
+    bottom: -20px;
+    right: -20px;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, var(--feature-color, var(--primary-color)) 0%, rgba(0, 0, 0, 0) 70%);
+    opacity: 0.15;
+    border-radius: 100%;
+    pointer-events: none;
+}
+
+// Tooltip styles
+.tooltip {
+    position: relative;
+    display: inline-block;
+
+    .tooltip-text {
+        visibility: hidden;
+        width: 200px;
+        background-color: var(--background-tertiary);
+        color: var(--text-primary);
+        text-align: center;
+        border-radius: $border-radius-md;
+        padding: $spacing-2;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 0;
+        transition: opacity $transition-normal;
+        font-size: $font-size-xs;
+        box-shadow: 0 4px 6px var(--shadow-color);
+
+        &::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: var(--background-tertiary) transparent transparent transparent;
+        }
+    }
+
+    &:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+    }
+}
+
+// Success story section
+.success-stories {
+    margin-top: $spacing-10;
+    overflow: hidden;
+    position: relative;
+}
+
+.success-stories-title {
+    font-size: $font-size-base;
+    font-weight: 600;
+    margin-bottom: $spacing-4;
+    color: var(--text-secondary);
+}
+
+.stories-carousel {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    gap: $spacing-4;
+    padding-bottom: $spacing-2;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+.story-card {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+    width: 280px;
+    padding: $spacing-4;
+    border-radius: $border-radius-lg;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-left: 3px solid var(--primary-color);
+}
+
+.story-quote {
+    font-size: $font-size-sm;
+    color: var(--text-secondary);
+    margin-bottom: $spacing-3;
+    line-height: 1.6;
+}
+
+.story-author {
+    display: flex;
+    align-items: center;
+}
+
+.author-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background-color: #808080;
+    margin-right: $spacing-3;
+}
+
+.author-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.author-name {
+    font-size: $font-size-sm;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.author-position {
+    font-size: $font-size-xs;
+    color: var(--text-muted);
+}

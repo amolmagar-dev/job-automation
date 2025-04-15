@@ -1,0 +1,17 @@
+// Import abstracts (variables, mixins, functions)
+@import 'abstracts/index';
+
+// Import themes
+@import 'themes/index';
+
+// Import base styles
+@import 'base/index';
+
+// Import component styles
+@import 'components/index';
+
+// Set default theme
+// This can be changed programmatically in your React code
+:root {
+    @extend .theme-dark;
+}

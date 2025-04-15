@@ -1,0 +1,133 @@
+// Form elements
+.form {
+    &-container {
+        width: 100%;
+        max-width: 360px;
+        padding: $spacing-5;
+    }
+
+    &-heading {
+        font-size: $font-size-xl;
+        font-weight: 600;
+        margin-bottom: $spacing-2;
+    }
+
+    &-field {
+        margin-bottom: $spacing-4;
+        position: relative;
+    }
+
+    &-input {
+        @include form-input;
+
+        &.input-error {
+            border-color: var(--error-color);
+
+            &:focus {
+                box-shadow: 0 0 0 2px rgba($error-color, 0.25);
+            }
+        }
+    }
+
+    &-label {
+        display: block;
+        margin-bottom: $spacing-2;
+        font-size: $font-size-sm;
+        color: var(--text-secondary);
+    }
+}
+
+// Error message
+.error-message {
+    color: var(--error-color);
+    font-size: $font-size-sm;
+    margin-top: $spacing-1;
+}
+
+// Auth form elements
+.auth-form {
+    width: 100%;
+}
+
+.account-toggle {
+    color: var(--text-muted);
+    font-size: $font-size-sm;
+    margin-bottom: $spacing-6;
+}
+
+.name-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: $spacing-3;
+    margin-bottom: $spacing-4;
+
+    @include respond-to(sm) {
+        grid-template-columns: 1fr;
+        gap: $spacing-4;
+    }
+}
+
+.password-wrapper {
+    position: relative;
+}
+
+.password-toggle-btn {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.eye-icon {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
+
+.terms-text {
+    text-align: center;
+    font-size: $font-size-xs;
+    color: var(--text-muted);
+    margin-bottom: $spacing-4;
+
+    a {
+        color: var(--primary-color);
+        text-decoration: none;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    margin: $spacing-5 0;
+
+    &::before,
+    &::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background-color: var(--border-color);
+    }
+
+    &-text {
+        padding: 0 $spacing-4;
+        color: var(--text-muted);
+        font-size: $font-size-sm;
+    }
+}
+
+// Google auth container
+.google-auth-container {
+    width: 100%;
+}
