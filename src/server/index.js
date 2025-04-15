@@ -17,6 +17,7 @@ import jobConfigRoutes from './routes/jobConfigRoutes.js';
 import portalCredentialPlugin from './plugins/portalCredentialPlugin.js';
 import portalCredentialRoutes from './routes/portalCredentialRoutes.js';
 import jobRunnerPlugin from './job/jobRunner.js';
+import jobApplicationModelPlugin from './plugins/jobApplicationPlugin.js';
 import jobApplicationRoutes from './routes/jobApplicationRoutes.js';
 
 // Load environment variables
@@ -60,6 +61,7 @@ await fastify.register(fastifyMongo, {
 fastify.register(userModelPlugin);
 fastify.register(jobConfigPlugin);
 fastify.register(portalCredentialPlugin);
+fastify.register(jobApplicationModelPlugin);
 await fastify.register(jobRunnerPlugin, {});
 
 
