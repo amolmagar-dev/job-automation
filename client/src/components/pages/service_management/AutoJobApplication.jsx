@@ -22,6 +22,7 @@ import {
     Download
 } from 'lucide-react';
 import { jobConfigService } from '../../../services/jobConfigService';
+import { portalCredentialService } from '../../../services/portalCredentialService';
 
 const API_URL = 'http://localhost:3000';
 
@@ -87,12 +88,12 @@ const AutoJobApplication = () => {
 
             const response = await jobConfigService.getConfigs()
 
-            if (response.data.success) {
-                setConfigs(response.data.configs);
+            if (response.success) {
+                setConfigs(response.configs);
 
                 // If we have configs, set the first one as active
-                if (response.data.configs.length > 0) {
-                    const firstConfig = response.data.configs[0];
+                if (response.configs.length > 0) {
+                    const firstConfig = response.configs[0];
                     setCurrentConfigId(firstConfig.id);
                     loadConfigToForm(firstConfig);
                 }
@@ -141,14 +142,10 @@ const AutoJobApplication = () => {
 
             if (!token) return;
 
-            const response = await axios.get(`${API_URL}/portal-credentials/${portal}`, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
+            const response = await portalCredentialService.getCredentials(portal)
 
-            if (response.data.success && response.data.credential) {
-                setUsername(response.data.credential.username || '');
+            if (response.success && response.credential) {
+                setUsername(response.credential.username || '');
                 setCredentialsSaved(true);
                 // Password won't be returned for security
                 setPassword('');
