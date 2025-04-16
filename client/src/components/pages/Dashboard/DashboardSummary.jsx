@@ -27,8 +27,6 @@ import {
   FileText,
   Mail,
   Bell,
-  Loader,
-  SearchCode,
   TrendingUp
 } from 'lucide-react';
 
@@ -46,7 +44,6 @@ const DashboardSummary = () => {
   });
   const [recentApplications, setRecentApplications] = useState([]);
   const [statusStats, setStatusStats] = useState([]);
-  const [portalStats, setPortalStats] = useState([]);
   const [monthlyStats, setMonthlyStats] = useState([]);
 
   // Fetch dashboard data on component mount
@@ -89,7 +86,6 @@ const DashboardSummary = () => {
 
         // Update state
         setStatusStats(statusData);
-        setPortalStats(portalData);
         setMonthlyStats(monthlyData);
         setRecentApplications(applicationsResponse.data.applications);
 
@@ -102,7 +98,7 @@ const DashboardSummary = () => {
           applications: stats.total || 0,
           responses: responded || 0,
           interviews: interviews || 0,
-          pendingTasks: 2 // Placeholder for now
+          pendingTasks: 0 // Placeholder for now
         });
 
         setIsLoading(false);
@@ -110,42 +106,6 @@ const DashboardSummary = () => {
         console.error('Error fetching dashboard data:', err);
         setError('Failed to load dashboard data. Please try again later.');
         setIsLoading(false);
-
-        // Fallback to mock data for development
-        setDashboardStats({
-          applications: 24,
-          responses: 8,
-          interviews: 3,
-          pendingTasks: 2
-        });
-
-        setRecentApplications([
-          { id: 1, title: "Frontend Developer", company: "Tech Solutions", status: "Applied", appliedOn: "2025-04-05", portal: "LinkedIn" },
-          { id: 2, title: "UI/UX Designer", company: "Global Innovations", status: "Interviewing", appliedOn: "2025-04-03", portal: "Email Outreach" },
-          { id: 3, title: "React Developer", company: "Webstar Systems", status: "Viewed", appliedOn: "2025-04-02", portal: "Naukri" },
-          { id: 4, title: "Full Stack Developer", company: "Future Technologies", status: "Applied", appliedOn: "2025-04-01", portal: "Indeed" }
-        ]);
-
-        setStatusStats([
-          { name: 'Applied', value: 18 },
-          { name: 'Interviewing', value: 3 },
-          { name: 'Rejected', value: 2 },
-          { name: 'Offered', value: 1 }
-        ]);
-
-        setPortalStats([
-          { name: 'LinkedIn', value: 12 },
-          { name: 'Indeed', value: 6 },
-          { name: 'Naukri', value: 4 },
-          { name: 'Email', value: 2 }
-        ]);
-
-        setMonthlyStats([
-          { name: '01/2025', applications: 5 },
-          { name: '02/2025', applications: 8 },
-          { name: '03/2025', applications: 12 },
-          { name: '04/2025', applications: 24 }
-        ]);
       }
     };
 
@@ -250,7 +210,7 @@ const DashboardSummary = () => {
             <p className="metric-label">Scheduled</p>
             <div className="metric-trend negative">
               <ArrowDownRight size={14} className="trend-icon" />
-              <span>3% from last month</span>
+              <span>0% from last month</span>
             </div>
           </div>
         </div>
@@ -265,22 +225,6 @@ const DashboardSummary = () => {
             <p className="metric-label">Tasks</p>
           </div>
         </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="quick-actions">
-        <button className="action-button primary">
-          <PlusCircle size={18} className="button-icon" />
-          Apply to New Job
-        </button>
-        <button className="action-button secondary">
-          <FileUp size={18} className="button-icon" />
-          Upload Resume
-        </button>
-        <button className="action-button secondary">
-          <Settings size={18} className="button-icon" />
-          Set Job Preferences
-        </button>
       </div>
 
       {/* Charts Row */}
@@ -379,36 +323,6 @@ const DashboardSummary = () => {
               </div>
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* Service Actions */}
-      <div className="services-actions">
-        <div className="service-card">
-          <div className="service-icon">
-            <FileText size={24} />
-          </div>
-          <h3>Optimize Resume</h3>
-          <p>Improve your resume to get more responses</p>
-          <button className="service-button">Check Score</button>
-        </div>
-
-        <div className="service-card">
-          <div className="service-icon">
-            <Mail size={24} />
-          </div>
-          <h3>HR Connect</h3>
-          <p>Reach out directly to hiring managers</p>
-          <button className="service-button">Start Campaign</button>
-        </div>
-
-        <div className="service-card">
-          <div className="service-icon">
-            <Bell size={24} />
-          </div>
-          <h3>Setup Alerts</h3>
-          <p>Get notified about new matching jobs</p>
-          <button className="service-button">Configure</button>
         </div>
       </div>
     </div>

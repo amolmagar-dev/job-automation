@@ -53,18 +53,6 @@ const Layout = ({ children, activePage = 'dashboard', onNavigate }) => {
         loadUser();
     }, []);
 
-    // User data format from backend:
-    // {
-    //   "id": "67f7b361248128510a1bdc70",
-    //   "firstName": "Amol",
-    //   "lastName": "Magar",
-    //   "email": "a.magar@smartshiphub.com",
-    //   "profilePicture": "https://lh3.googleusercontent.com/a/ACg8ocKIuemNJxf9HR0tOzDqvF-jd9nUNPN1-vxUGlp37T46meih0w=s96-c",
-    //   "authProvider": "google",
-    //   "createdAt": "2025-04-10T12:02:41.270Z",
-    //   "role": "user"
-    // }
-
     const notifications = [
         { id: 1, type: "message", text: "New message from Tech Solutions", time: "10 min ago", read: false },
         { id: 2, type: "interview", text: "Interview scheduled with DataSys Corp", time: "1 hour ago", read: false },

@@ -21,13 +21,13 @@ import {
     Brain,
     Download
 } from 'lucide-react';
-import './AutoJobApplication.css';
 
 const API_URL = 'http://localhost:3000';
 
 const AutoJobApplication = () => {
     const [activeTab, setActiveTab] = useState('portals');
-    const [configName, setConfigName] = useState('My Naukri Config');
+    // we will not show the user the config name and user can not change it
+    const [configName, setConfigName] = useState('my auto job config');
     const [isActive, setIsActive] = useState(false);
     const [loading, setLoading] = useState(false);
     const [configs, setConfigs] = useState([]);
@@ -398,38 +398,6 @@ const AutoJobApplication = () => {
 
     return (
         <div className="job-automation-container">
-            <div className="job-automation-header">
-                <h1>Job Automation</h1>
-                <div className="config-header">
-                    <input
-                        type="text"
-                        className="config-name-input"
-                        value={configName}
-                        onChange={(e) => setConfigName(e.target.value)}
-                        placeholder="Configuration Name"
-                    />
-                    <div className="config-actions">
-                        <label className="switch">
-                            <input
-                                type="checkbox"
-                                checked={isActive}
-                                onChange={() => setIsActive(!isActive)}
-                            />
-                            <span className="slider round"></span>
-                        </label>
-                        <span className="status-label">{isActive ? 'Active' : 'Inactive'}</span>
-                        <button className="btn-outline" onClick={runNow}>
-                            <PlayCircle size={18} />
-                            Run Now
-                        </button>
-                        <button className="btn-primary" onClick={saveConfig}>
-                            <Save size={18} />
-                            Save
-                        </button>
-                    </div>
-                </div>
-            </div>
-
             <div className="tab-navigation">
                 <button
                     className={`tab-item ${activeTab === 'portals' ? 'active' : ''}`}
@@ -452,13 +420,13 @@ const AutoJobApplication = () => {
                     <Brain size={18} />
                     Train Your AI
                 </button>
-                <button
+                {/* <button
                     className={`tab-item ${activeTab === 'resume' ? 'active' : ''}`}
                     onClick={() => setActiveTab('resume')}
                 >
                     <FileText size={18} />
                     Resume Update
-                </button>
+                </button> */}
                 <button
                     className={`tab-item ${activeTab === 'schedule' ? 'active' : ''}`}
                     onClick={() => setActiveTab('schedule')}
@@ -473,6 +441,25 @@ const AutoJobApplication = () => {
                     <Bell size={18} />
                     Notifications
                 </button>
+                <div className="config-actions ">
+                        <label className="switch">
+                            <input
+                                type="checkbox"
+                                checked={isActive}
+                                onChange={() => setIsActive(!isActive)}
+                            />
+                            <span className="slider round"></span>
+                        </label>
+                        <span className="status-label">{isActive ? 'Active' : 'Inactive'}</span>
+                        <button className="btn-outline" onClick={runNow}>
+                            <PlayCircle size={18} />
+                            Run Now
+                        </button>
+                        <button className="btn-primary" onClick={saveConfig}>
+                            <Save size={18} />
+                            Save
+                        </button>
+                    </div>
             </div>
 
             <div className="tab-content">

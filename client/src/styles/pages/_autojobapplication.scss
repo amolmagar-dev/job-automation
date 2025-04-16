@@ -1,0 +1,763 @@
+
+// Main container
+.job-automation-container {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--background-secondary);
+  border-radius: $border-radius-lg;
+  width: 100%;
+  position: relative;
+}
+
+// Header section
+.job-automation-header {
+  padding: $spacing-5;
+  background-color: var(--background-secondary);
+  border-bottom: 1px solid var(--border-color);
+
+  h1 {
+    font-size: $font-size-xl;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 $spacing-4 0;
+  }
+}
+
+.config-header {
+  @include flex(row, space-between, center);
+}
+
+.config-name-input {
+  font-size: $font-size-lg;
+  font-weight: 600;
+  color: var(--text-primary);
+  border: none;
+  background-color: transparent;
+  padding: $spacing-1 $spacing-2;
+  border-radius: $border-radius-sm;
+  width: 300px;
+  outline: none;
+  
+  &:focus {
+    border: 1px solid var(--border-color);
+    background-color: var(--background-tertiary);
+  }
+}
+
+.config-actions {
+  @include flex(row, flex-start, center);
+  gap: $spacing-3;
+}
+
+.status-label {
+  font-size: $font-size-sm;
+  color: var(--text-tertiary);
+}
+
+// Tab Navigation
+.tab-navigation {
+  @include flex(row, flex-start, center);
+  padding: 0 $spacing-5;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--background-secondary);
+  position: sticky;
+  top: 0;
+  z-index: $z-index-dropdown / 10;
+}
+
+.tab-item {
+  @include flex(row, center, center);
+  gap: $spacing-2;
+  padding: $spacing-3 $spacing-4;
+  background: none;
+  border: none;
+  font-size: $font-size-sm;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all $transition-fast;
+  
+  &:hover {
+    color: var(--text-primary);
+  }
+  
+  &.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+  }
+}
+
+.tab-content {
+  padding: $spacing-6;
+  flex: 1;
+}
+
+.content-panel {
+  background-color: var(--background-secondary);
+  border-radius: $border-radius-lg;
+  padding: $spacing-6;
+  box-shadow: 0 1px 3px var(--shadow-color);
+  
+  h2 {
+    margin-top: 0;
+    margin-bottom: $spacing-2;
+    font-size: $font-size-lg;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  
+  p {
+    margin-top: 0;
+    margin-bottom: $spacing-6;
+    color: var(--text-tertiary);
+    font-size: $font-size-sm;
+  }
+}
+
+// Portal Selector
+.portal-selector {
+  @include flex(row, flex-start, center);
+  margin-bottom: $spacing-6;
+  gap: $spacing-3;
+  
+  @include respond-to(md) {
+    flex-wrap: wrap;
+  }
+}
+
+.portal-option {
+  @include flex(row, flex-start, center);
+  padding: $spacing-3 $spacing-4;
+  border-radius: $border-radius-lg;
+  background-color: var(--background-primary);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  transition: all $transition-fast;
+  min-width: 120px;
+  gap: $spacing-3;
+  
+  @include respond-to(md) {
+    min-width: calc(50% - $spacing-2);
+  }
+  
+  &:hover {
+    border-color: var(--text-tertiary);
+    background-color: var(--background-tertiary);
+  }
+  
+  &.active {
+    border-color: var(--primary-color);
+    background-color: to-rgba($primary-color, 0.1);
+  }
+  
+  &.disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+.portal-letter {
+  @include flex(row, center, center);
+  width: 28px;
+  height: 28px;
+  background-color: var(--background-tertiary);
+  border-radius: $border-radius-sm;
+  font-weight: 600;
+  font-size: $font-size-sm;
+  color: var(--text-primary);
+}
+
+.portal-name {
+  font-weight: 500;
+  color: var(--text-primary);
+  font-size: $font-size-sm;
+}
+
+.portal-status {
+  font-size: $font-size-xs;
+  color: var(--text-tertiary);
+  
+  &.available {
+    color: var(--success-color);
+  }
+  
+  &.soon {
+    color: var(--warning-color);
+  }
+}
+
+// Form Styles
+.credential-form,
+.search-criteria-form,
+.ai-training-form,
+.resume-settings,
+.schedule-settings,
+.notification-settings {
+  background-color: var(--background-primary);
+  border-radius: $border-radius-lg;
+  padding: $spacing-5;
+}
+
+.form-row {
+  @include flex(row, flex-start, flex-start);
+  gap: $spacing-4;
+  margin-bottom: $spacing-4;
+  
+  @include respond-to(md) {
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
+.form-group {
+  @include flex(column, flex-start, flex-start);
+  flex: 1;
+  margin-bottom: $spacing-4;
+  
+  label {
+    @include flex(row, flex-start, center);
+    gap: $spacing-2;
+    font-size: $font-size-sm;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: $spacing-2;
+  }
+  
+  input,
+  select,
+  textarea {
+    @include form-input;
+    padding: $spacing-3 $spacing-4;
+    border: 1px solid var(--border-color);
+    border-radius: $border-radius-md;
+    font-size: $font-size-sm;
+    background-color: var(--background-tertiary);
+    color: var(--text-primary);
+  }
+  
+  textarea {
+    resize: vertical;
+    min-height: 120px;
+    font-family: inherit;
+    line-height: 1.5;
+  }
+}
+
+.password-field {
+  position: relative;
+  
+  input {
+    width: 100%;
+    padding-right: 40px;
+  }
+}
+
+.password-toggle {
+  position: absolute;
+  right: $spacing-3;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+
+.field-hint {
+  font-size: $font-size-xs;
+  color: var(--text-tertiary);
+  margin-top: $spacing-1;
+}
+
+.button-group {
+  @include flex(row, flex-start, center);
+  gap: $spacing-3;
+  margin-bottom: $spacing-4;
+  
+  @include respond-to(md) {
+    flex-direction: column;
+  }
+}
+
+.success-message {
+  @include flex(row, flex-start, center);
+  gap: $spacing-2;
+  padding: $spacing-3;
+  background-color: to-rgba($success-color, 0.1);
+  border-radius: $border-radius-md;
+  color: var(--success-color);
+  font-size: $font-size-sm;
+  margin-bottom: $spacing-4;
+}
+
+.security-message {
+  margin-bottom: $spacing-5;
+  @include flex(row, flex-start, flex-start);
+  gap: $spacing-2;
+  padding: $spacing-3;
+  background-color: to-rgba($warning-color, 0.1);
+  border-radius: $border-radius-md;
+  color: tint($warning-color, 20%);
+  
+  svg {
+    color: var(--warning-color);
+    flex-shrink: 0;
+    margin-top: $spacing-1;
+  }
+  
+  p {
+    margin: 0;
+    font-size: $font-size-xs;
+    line-height: 1.5;
+  }
+}
+
+// Button Styles
+.btn-primary {
+  @include primary-button;
+  @include flex(row, center, center);
+  gap: $spacing-2;
+  font-size: $font-size-sm;
+}
+
+.btn-outline {
+  @include secondary-button;
+  @include flex(row, center, center);
+  gap: $spacing-2;
+  font-size: $font-size-sm;
+}
+
+.btn-icon {
+  @include flex(row, center, center);
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: $border-radius-sm;
+  
+  &:hover {
+    background-color: var(--background-tertiary);
+    color: var(--primary-color);
+  }
+}
+
+// Toggle Switch
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  
+  input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--border-color);
+  transition: $transition-fast;
+  
+  &:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 2px;
+    bottom: 2px;
+    background-color: var(--text-primary);
+    transition: $transition-fast;
+  }
+  
+  input:checked + & {
+    background-color: var(--success-color);
+  }
+  
+  input:focus + & {
+    box-shadow: 0 0 1px var(--success-color);
+  }
+  
+  input:checked + &:before {
+    transform: translateX(16px);
+  }
+  
+  &.round {
+    border-radius: $border-radius-full;
+    
+    &:before {
+      border-radius: 50%;
+    }
+  }
+}
+
+// Range inputs
+input[type="range"] {
+  width: 100%;
+  height: 6px;
+  -webkit-appearance: none;
+  background: var(--border-color);
+  border-radius: $border-radius-sm;
+  outline: none;
+  margin: $spacing-3 0;
+  
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+  }
+}
+
+// AI Training specific styles
+.ai-actions {
+  @include flex(row, flex-start, stretch);
+  gap: $spacing-5;
+  margin-bottom: $spacing-6;
+  
+  @include respond-to(md) {
+    flex-direction: column;
+  }
+}
+
+.ai-info-box {
+  flex: 1;
+  background-color: var(--background-secondary);
+  border-radius: $border-radius-lg;
+  padding: $spacing-4;
+  border: 1px solid var(--border-color);
+}
+
+.ai-info-header {
+  @include flex(row, flex-start, center);
+  gap: $spacing-2;
+  margin-bottom: $spacing-2;
+  
+  h3 {
+    margin: 0;
+    font-size: $font-size-sm;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  
+  svg {
+    color: var(--primary-color);
+  }
+}
+
+.ai-info-box p {
+  font-size: $font-size-xs;
+  color: var(--text-tertiary);
+  margin-bottom: $spacing-3;
+  line-height: 1.5;
+}
+
+.ai-features-list {
+  padding-left: $spacing-5;
+  margin: 0;
+  
+  li {
+    font-size: $font-size-xs;
+    color: var(--text-tertiary);
+    margin-bottom: $spacing-1;
+  }
+}
+
+.ai-sample-questions {
+  margin-top: $spacing-6;
+  
+  h3 {
+    font-size: $font-size-sm;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: $spacing-3;
+  }
+}
+
+.sample-questions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: $spacing-3;
+  
+  @include respond-to(sm) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sample-question {
+  background-color: var(--background-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: $border-radius-md;
+  padding: $spacing-3;
+  font-size: $font-size-xs;
+  color: var(--text-secondary);
+}
+
+// Animation
+.spinning-icon {
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Resume Settings
+.toggle-setting {
+  @include flex(row, space-between, center);
+  padding: $spacing-4;
+  background-color: var(--background-secondary);
+  border-radius: $border-radius-lg;
+  border: 1px solid var(--border-color);
+  margin-bottom: $spacing-4;
+  
+  h3 {
+    margin: 0 0 $spacing-1;
+    font-size: $font-size-base;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  
+  p {
+    margin: 0;
+    font-size: $font-size-xs;
+    color: var(--text-tertiary);
+  }
+}
+
+.resume-options {
+  padding: $spacing-4;
+  background-color: var(--background-secondary);
+  border-radius: $border-radius-lg;
+  border: 1px solid var(--border-color);
+}
+
+.option-card {
+  padding: $spacing-3;
+  border-radius: $border-radius-md;
+  background-color: var(--background-primary);
+  margin-bottom: $spacing-4;
+}
+
+.checkbox-item {
+  @include flex(row, flex-start, flex-start);
+  gap: $spacing-3;
+}
+
+.checkbox-title {
+  font-size: $font-size-sm;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: $spacing-1;
+}
+
+.checkbox-description {
+  font-size: $font-size-xs;
+  color: var(--text-tertiary);
+}
+
+.resume-uploader {
+  margin-top: $spacing-6;
+  
+  h3 {
+    margin: 0 0 $spacing-1;
+    font-size: $font-size-sm;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  
+  p {
+    margin: 0 0 $spacing-3;
+    font-size: $font-size-xs;
+    color: var(--text-tertiary);
+  }
+}
+
+// Schedule Settings
+.radio-group {
+  @include flex(row, flex-start, center);
+  gap: $spacing-4;
+  margin-top: $spacing-2;
+}
+
+.radio-item {
+  @include flex(row, flex-start, center);
+  gap: $spacing-2;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.day-selector {
+  @include flex(row, flex-start, center);
+  gap: $spacing-2;
+  margin-top: $spacing-2;
+}
+
+.day-item {
+  @include flex(row, center, center);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--background-secondary);
+  border: 1px solid var(--border-color);
+  font-size: $font-size-xs;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all $transition-fast;
+  
+  &:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+  }
+  
+  &.selected {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+  }
+}
+
+.next-run-card {
+  @include flex(row, space-between, center);
+  padding: $spacing-4;
+  background-color: var(--background-secondary);
+  border-radius: $border-radius-lg;
+  border: 1px solid var(--border-color);
+  margin-top: $spacing-6;
+  
+  @include respond-to(md) {
+    flex-direction: column;
+    gap: $spacing-4;
+    text-align: center;
+  }
+  
+  h3 {
+    margin: 0 0 $spacing-1;
+    font-size: $font-size-sm;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+}
+
+.next-run-time {
+  font-size: $font-size-base;
+  font-weight: 500;
+  color: var(--primary-color);
+  margin: 0;
+}
+
+// Notification Settings
+.notification-types {
+  padding: $spacing-4;
+  background-color: var(--background-secondary);
+  border-radius: $border-radius-lg;
+  border: 1px solid var(--border-color);
+  margin-top: $spacing-4;
+  
+  h3 {
+    margin: 0 0 $spacing-4;
+    font-size: $font-size-sm;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+}
+
+.checkbox-group {
+  @include flex(column, flex-start, flex-start);
+  gap: $spacing-3;
+}
+
+// Configurations panel
+.configs-panel {
+  position: absolute;
+  top: $spacing-5;
+  right: $spacing-5;
+  width: 240px;
+  background-color: var(--background-secondary);
+  border-radius: $border-radius-lg;
+  box-shadow: 0 4px 6px var(--shadow-color);
+  overflow: hidden;
+  display: none; // Hidden by default, display with Javascript if needed
+}
+
+.configs-header {
+  @include flex(row, space-between, center);
+  padding: $spacing-3 $spacing-4;
+  border-bottom: 1px solid var(--border-color);
+  
+  h3 {
+    margin: 0;
+    font-size: $font-size-sm;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+}
+
+.configs-list {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.config-item {
+  @include flex(row, space-between, center);
+  padding: $spacing-2 $spacing-4;
+  cursor: pointer;
+  transition: background-color $transition-fast;
+  
+  &:hover {
+    background-color: var(--background-primary);
+  }
+  
+  &.active {
+    background-color: to-rgba($primary-color, 0.1);
+    border-left: 3px solid var(--primary-color);
+  }
+}
+
+.config-name {
+  font-size: $font-size-sm;
+  color: var(--text-secondary);
+}
+
+.config-status {
+  font-size: $font-size-xs;
+  padding: $spacing-1 $spacing-2;
+  border-radius: $border-radius-full;
+  
+  &.active {
+    background-color: to-rgba($success-color, 0.1);
+    color: var(--success-color);
+  }
+  
+  &.inactive {
+    background-color: var(--background-tertiary);
+    color: var(--text-tertiary);
+  }
+}
+
+// Responsive design
+@include respond-to(md) {
+  .portal-option {
+    min-width: calc(50% - $spacing-2);
+  }
+  
+  .next-run-card button {
+    width: 100%;
+  }
+}
