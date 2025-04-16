@@ -191,13 +191,6 @@ const Layout = ({ children, activePage = 'dashboard', onNavigate }) => {
                         <span className="nav-text">Resume Performance</span>
                     </div>
 
-                    <div
-                        className={`nav-item ${activePage === 'hr-connect' ? 'active' : ''}`}
-                        onClick={() => handleNavigation('hr-connect')}
-                    >
-                        <Mail className="nav-icon" size={20} />
-                        <span className="nav-text">HR Connect</span>
-                    </div>
 
                     <div
                         className={`nav-item ${activePage === 'services' ? 'active' : ''}`}
