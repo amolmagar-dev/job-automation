@@ -90,13 +90,12 @@ await fastify.register(fastifyStatic, {
 });
 
 // Register API routes
-await fastify.register(routes, { prefix: '/api' });
-
+await fastify.register(routes, { prefix: '/api/v1' });
 // Register auth routes
-await fastify.register(userRoutes, { prefix: '/api' });
-await fastify.register(jobConfigRoutes);
-await fastify.register(portalCredentialRoutes);
-await fastify.register(jobApplicationRoutes, { prefix: '/api' });
+await fastify.register(userRoutes, { prefix: '/api/v1' });
+await fastify.register(jobConfigRoutes , { prefix: '/api/v1' });
+await fastify.register(portalCredentialRoutes , { prefix: '/api/v1' });
+await fastify.register(jobApplicationRoutes, { prefix: '/api/v1' });
 // 
 
 

@@ -21,6 +21,7 @@ import {
     Brain,
     Download
 } from 'lucide-react';
+import { jobConfigService } from '../../../services/jobConfigService';
 
 const API_URL = 'http://localhost:3000';
 
@@ -84,11 +85,7 @@ const AutoJobApplication = () => {
                 return;
             }
 
-            const response = await axios.get(`${API_URL}/job-config`, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
+            const response = await jobConfigService.getConfigs()
 
             if (response.data.success) {
                 setConfigs(response.data.configs);
