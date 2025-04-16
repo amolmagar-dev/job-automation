@@ -83,29 +83,10 @@ fastify.decorate('authenticate', async (request, reply) => {
     }
 });
 
-// // Create MongoDB indexes when the connection is ready
-// fastify.addHook('onReady', async () => {
-//     try {
-//         // Create a unique index on email field to prevent duplicates
-//         await fastify.mongo.db.collection('users').createIndex(
-//             { email: 1 },
-//             { unique: true }
-//         );
-
-//         // Optional: Create additional indexes for performance optimization
-//         await fastify.mongo.db.collection('users').createIndex({ googleId: 1 });
-//         await fastify.mongo.db.collection('users').createIndex({ authProvider: 1 });
-
-//         fastify.log.info('MongoDB indexes created successfully');
-//     } catch (err) {
-//         fastify.log.error('Error creating MongoDB indexes:', err);
-//     }
-// });
-
 // Serve static files for the frontend
 await fastify.register(fastifyStatic, {
-    root: path.join(__dirname, '../../frontend/public'),
-    prefix: '/' // Serve frontend at root URL
+    root: path.join(__dirname, '../../client/dist'),
+    prefix: '/' // Serve all files under the root
 });
 
 // Register API routes
