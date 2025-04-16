@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import apiUtils from '../../../services/jobApplications';
+import apiUtils from '../../../services/jobApplicationService';
 import {
   BarChart,
   Bar,
@@ -103,7 +103,6 @@ const DashboardSummary = () => {
 
         setIsLoading(false);
       } catch (err) {
-        console.error('Error fetching dashboard data:', err);
         setError('Failed to load dashboard data. Please try again later.');
         setIsLoading(false);
       }

@@ -20,7 +20,7 @@ import {
     Moon,
     Menu
 } from 'lucide-react';
-import authService from '../../services/auth/JobSuiteXAuth';
+import authService from '../../services/authService.js';
 
 // No need to import CSS file as we're using SCSS
 
@@ -43,7 +43,6 @@ const Layout = ({ children, activePage = 'dashboard', onNavigate }) => {
         const loadUser = async () => {
             try {
                 const userData = await authService.getCurrentUser();
-                console.log(userData);
                 setUser(userData);
             } catch (err) {
                 setUser(null);

@@ -1,5 +1,5 @@
 // src/services/authService.js
-import api from '../service.js';
+import api from './service.js';
 
 /**
  * Authentication service for handling login, registration, and user sessions

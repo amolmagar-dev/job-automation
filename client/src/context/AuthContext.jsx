@@ -1,6 +1,6 @@
 // src/context/AuthContext.js
 import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
-import authService from '../services/auth/JobSuiteXAuth';
+import authService from '../services/authService.js';
 
 // Create the authentication context
 const AuthContext = createContext();
