@@ -20,6 +20,7 @@ import {
     Moon,
     Menu
 } from 'lucide-react';
+import authService from '../../services/auth/JobSuiteXAuth';
 
 // No need to import CSS file as we're using SCSS
 
@@ -29,6 +30,7 @@ const Layout = ({ children, activePage = 'dashboard', onNavigate }) => {
     const [sidebarExpanded, setSidebarExpanded] = useState(false);
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
+    const [user, setUser] = useState(null);
 
     const sidebarRef = useRef(null);
     const notificationsRef = useRef(null);
@@ -36,18 +38,50 @@ const Layout = ({ children, activePage = 'dashboard', onNavigate }) => {
 
     const { theme, toggleTheme } = useTheme();
 
-    // Mock Data for user and notifications
-    const userData = {
-        name: "John Doe",
-        email: "john.doe@example.com",
-        profileImage: null // If null, we'll show initials
-    };
+    // Load user data
+    useEffect(() => {
+        const loadUser = async () => {
+            try {
+                const userData = await authService.getCurrentUser();
+                console.log(userData);
+                setUser(userData);
+            } catch (err) {
+                setUser(null);
+            } 
+        };
+
+        loadUser();
+    }, []);
+
+    // User data format from backend:
+    // {
+    //   "id": "67f7b361248128510a1bdc70",
+    //   "firstName": "Amol",
+    //   "lastName": "Magar",
+    //   "email": "a.magar@smartshiphub.com",
+    //   "profilePicture": "https://lh3.googleusercontent.com/a/ACg8ocKIuemNJxf9HR0tOzDqvF-jd9nUNPN1-vxUGlp37T46meih0w=s96-c",
+    //   "authProvider": "google",
+    //   "createdAt": "2025-04-10T12:02:41.270Z",
+    //   "role": "user"
+    // }
 
     const notifications = [
         { id: 1, type: "message", text: "New message from Tech Solutions", time: "10 min ago", read: false },
         { id: 2, type: "interview", text: "Interview scheduled with DataSys Corp", time: "1 hour ago", read: false },
         { id: 3, type: "application", text: "Application viewed by GlobalTech", time: "3 hours ago", read: true }
     ];
+
+    // Get user's full name from firstName and lastName
+    const getUserFullName = () => {
+        if (!user) return '';
+        return `${user.firstName} ${user.lastName}`;
+    };
+
+    // Get user's initials for avatar fallback
+    const getUserInitials = () => {
+        if (!user) return '';
+        return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+    };
 
     // Detect scrolling to add shadow to topbar
     useEffect(() => {
@@ -286,27 +320,43 @@ const Layout = ({ children, activePage = 'dashboard', onNavigate }) => {
                                     onClick={toggleUserMenu}
                                     aria-label="User menu"
                                 >
-                                    {userData.profileImage ? (
-                                        <img src={userData.profileImage} alt="Profile" />
+                                    {user && user.profilePicture ? (
+                                        <img 
+                                            src={user.profilePicture} 
+                                            alt="Profile"
+                                            onError={(e) => {
+                                                e.target.onerror = null;
+                                                e.target.style.display = 'none';
+                                                e.target.parentNode.innerHTML = getUserInitials();
+                                            }}
+                                        />
                                     ) : (
-                                        userData.name.split(' ').map(n => n[0]).join('').toUpperCase()
+                                        <span>{user && getUserInitials()}</span>
                                     )}
                                 </button>
 
                                 {/* User dropdown menu */}
-                                {userMenuOpen && (
+                                {userMenuOpen && user && (
                                     <div className="dropdown user-dropdown">
                                         <div className="user-info">
                                             <div className="user-avatar large">
-                                                {userData.profileImage ? (
-                                                    <img src={userData.profileImage} alt="Profile" />
+                                                {user.profilePicture ? (
+                                                    <img 
+                                                        src={user.profilePicture} 
+                                                        alt="Profile" 
+                                                        onError={(e) => {
+                                                            e.target.onerror = null;
+                                                            e.target.style.display = 'none';
+                                                            e.target.parentNode.innerHTML = getUserInitials();
+                                                        }}
+                                                    />
                                                 ) : (
-                                                    userData.name.split(' ').map(n => n[0]).join('').toUpperCase()
+                                                    <span>{getUserInitials()}</span>
                                                 )}
                                             </div>
                                             <div className="user-details">
-                                                <h3>{userData.name}</h3>
-                                                <p>{userData.email}</p>
+                                                <h3>{getUserFullName()}</h3>
+                                                <p>{user.email}</p>
                                             </div>
                                         </div>
                                         <ul className="user-menu-list">
@@ -322,7 +372,15 @@ const Layout = ({ children, activePage = 'dashboard', onNavigate }) => {
                                                 <Key className="user-menu-icon" size={16} />
                                                 <span>Subscription</span>
                                             </li>
-                                            <li className="user-menu-item logout">
+                                            <li 
+                                                className="user-menu-item logout"
+                                                onClick={() => {
+                                                    // Clear auth token
+                                                    localStorage.removeItem('token');
+                                                    // Redirect to root path
+                                                    window.location.href = '/';
+                                                }}
+                                            >
                                                 <LogOut className="user-menu-icon" size={16} />
                                                 <span>Logout</span>
                                             </li>

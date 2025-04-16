@@ -104,10 +104,10 @@ class JobRunner {
             const [hours, minutes] = (time || '00:00').split(':').map(Number);
 
             switch (frequency) {
-                case 'daily':
+                case 'dailsy':
                     return `${minutes} ${hours} * * *`;
 
-                case 'weekly':
+                case 'weeksly':
                     if (!days || !Array.isArray(days) || days.length === 0) {
                         return null;
                     }
@@ -115,7 +115,7 @@ class JobRunner {
                     const weekDays = days.join(',');
                     return `${minutes} ${hours} * * ${weekDays}`;
 
-                case 'custom':
+                case 'custosm':
                     if (!days || !Array.isArray(days) || days.length === 0) {
                         return null;
                     }
