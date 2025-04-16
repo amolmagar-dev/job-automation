@@ -194,8 +194,8 @@ const DashboardSummary = () => {
             <p className="metric-value">{dashboardStats.responses}</p>
             <p className="metric-label">Received</p>
             <div className="metric-trend positive">
-              <TrendingUp size={14} className="trend-icon" />
-              <span>5% from last month</span>
+              {/* <TrendingUp size={14} className="trend-icon" /> */}
+              <span>0% from last month</span>
             </div>
           </div>
         </div>
