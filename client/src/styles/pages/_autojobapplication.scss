@@ -916,6 +916,11 @@ input[type="range"] {
 
 // Button styles
 .btn-primary {
+  align-items: center;
+  display: flex;
+  gap: $spacing-2;
+  justify-content: space-between;
+  padding: $spacing-3 $spacing-5;
   background-color: var(--primary-color);
   color: white;
   border: none;
@@ -942,6 +947,10 @@ input[type="range"] {
 }
 
 .btn-outline {
+  align-items: center;
+  display: flex;
+  padding: $spacing-3 $spacing-5;
+  gap: $spacing-2;
   background-color: transparent;
   color: var(--primary-color);
   border: 1px solid var(--primary-color);
