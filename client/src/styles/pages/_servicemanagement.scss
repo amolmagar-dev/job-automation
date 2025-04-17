@@ -1,0 +1,102 @@
+
+
+.service-management {
+  width: 100%;
+  margin: 0 auto;
+  padding: $spacing-4;
+  
+  h2 {
+    margin-bottom: $spacing-4;
+    font-size: $font-size-xl;
+    color: var(--text-primary);
+  }
+}
+
+.service-list {
+  border: 1px solid var(--border-color);
+  border-radius: $border-radius-lg;
+  overflow: hidden;
+}
+
+.service-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-4;
+  background-color: var(--background-secondary);
+  
+  @include respond-to(md) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $spacing-4;
+  }
+  
+  .service-details {
+    display: flex;
+    align-items: center;
+  }
+  
+  .service-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: $border-radius-md;
+    background-color: rgba($primary-color, 0.1);
+    color: var(--primary-color);
+    margin-right: $spacing-4;
+  }
+  
+  .service-info {
+    h3 {
+      margin: 0 0 $spacing-1;
+      font-size: $font-size-base;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    
+    p {
+      margin: 0;
+      font-size: $font-size-sm;
+      color: var(--text-secondary);
+    }
+  }
+  
+  .service-actions {
+    display: flex;
+    align-items: center;
+    gap: $spacing-4;
+    
+    @include respond-to(md) {
+      width: 100%;
+      justify-content: space-between;
+    }
+  }
+  
+  .service-status {
+    font-size: $font-size-sm;
+    
+    &.active {
+      color: var(--success-color);
+    }
+    
+    &.inactive {
+      color: var(--text-tertiary);
+    }
+  }
+  
+  .configure-button {
+    padding: $spacing-2 $spacing-4;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: $border-radius-md;
+    font-size: $font-size-sm;
+    cursor: pointer;
+    
+    &:hover {
+      background-color: darken($primary-color, 5%);
+    }
+  }
+}
