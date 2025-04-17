@@ -256,7 +256,7 @@ const AutoJobApplication = () => {
                 password: password
             };
 
-            const response = await portalCredentialService.verifyCredentials(verifyData);
+            const response = await portalCredentialService.verifyCredentials(selectedPortal, verifyData);
             
             if (response.success) {
                 toast.success('Credentials verified successfully');
