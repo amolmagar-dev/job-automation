@@ -15,7 +15,7 @@ const portalCredentialService = {
       throw error;
     }
   },
-  
+
   // Save credentials for a portal
   saveCredentials: async (credentialData) => {
     try {
@@ -25,7 +25,7 @@ const portalCredentialService = {
       throw error;
     }
   },
-  
+
   // Verify credentials for a portal
   verifyCredentials: async (portal, credentials) => {
     try {

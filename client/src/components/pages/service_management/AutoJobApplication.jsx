@@ -24,8 +24,6 @@ import {
 import { jobConfigService } from '../../../services/jobConfigService';
 import { portalCredentialService } from '../../../services/portalCredentialService';
 
-const API_URL = 'http://localhost:3000';
-
 const AutoJobApplication = () => {
     const [activeTab, setActiveTab] = useState('portals');
     // we will not show the user the config name and user can not change it
@@ -186,19 +184,15 @@ const AutoJobApplication = () => {
                 password: password || undefined // Only send if provided
             };
 
-            const response = await axios.post(`${API_URL}/portal-credentials`, credentialData, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
+            const response = await portalCredentialService.saveCredentials(credentialData)
 
-            if (response.data.success) {
+            if (response.success) {
                 setCredentialsSaved(true);
-                setPassword(''); // Clear password for security
+                setPassword('');
                 toast.success('Credentials saved successfully');
             }
         } catch (error) {
-            toast.error('Failed to save credentials: ' + (error.response?.data?.message || error.message));
+            toast.error('Failed to save credentials: ' + (error.response?.message || error.message));
         } finally {
             setLoading(false);
         }
@@ -233,21 +227,14 @@ const AutoJobApplication = () => {
                 password: password
             };
 
-            const response = await axios.post(
-                `${API_URL}/portal-credentials/naukri/verify`,
-                verifyData,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
-            );
+            const response = await portalCredentialService.verifyCredentials(verifyData)
+
 
             if (response) {
                 toast('Here is your toast.')
             }
         } catch (error) {
-            toast.error('Failed to verify connection: ' + (error.response?.data?.message || error.message));
+            toast.error('Failed to verify connection: ' + (error.response?.message || error.message));
         } finally {
             setLoading(false);
         }
@@ -257,36 +244,21 @@ const AutoJobApplication = () => {
     const analyzeProfile = async () => {
         try {
             setIsGeneratingProfile(true);
-            const token = localStorage.getItem('token');
-
-            if (!token) {
-                toast.error('You must be logged in to analyze your profile');
-                return;
-            }
 
             if (!currentConfigId) {
                 toast.error('Please save your configuration first');
                 return;
             }
-
             // Call the API endpoint to analyze profile
-            const response = await axios.post(
-                `${API_URL}/job-config/${currentConfigId}/analyze-profile`,
-                { portal: 'naukri' },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
-            );
+            const response = await jobConfigService.analyzeProfile(currentConfigId, 'naukri')
 
-            if (response.data.success) {
+            if (response.success) {
                 // Update the UI with the generated description
-                setSelfDescription(response.data.aiTraining.selfDescription);
+                setSelfDescription(response.aiTraining.selfDescription);
                 toast.success('Profile analyzed and description generated successfully');
             }
         } catch (error) {
-            toast.error('Failed to analyze profile: ' + (error.response?.data?.message || error.message));
+            toast.error('Failed to analyze profile: ' + (error.response?.message || error.message));
         } finally {
             setIsGeneratingProfile(false);
         }
@@ -331,24 +303,15 @@ const AutoJobApplication = () => {
 
             // Update or create configuration
             if (currentConfigId) {
-                response = await axios.put(`${API_URL}/job-config/${currentConfigId}`, configData, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                });
+                response = await jobConfigService.updateConfig(currentConfigId , configData)
 
-                if (response.data.success) {
+                if (response.success) {
                     toast.success('Configuration updated successfully');
                 }
             } else {
-                response = await axios.post(`${API_URL}/job-config`, configData, {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                });
-
-                if (response.data.success) {
-                    setCurrentConfigId(response.data.config.id);
+                response = await jobConfigService.createConfig(configData)
+                if (response.success) {
+                    setCurrentConfigId(response.config.id);
                     toast.success('Configuration created successfully');
                 }
             }
@@ -357,7 +320,7 @@ const AutoJobApplication = () => {
             fetchConfigs();
 
         } catch (error) {
-            toast.error('Failed to save configuration: ' + (error.response?.data?.message || error.message));
+            toast.error('Failed to save configuration: ' + (error.response?.message || error.message));
         } finally {
             setLoading(false);
         }
@@ -367,24 +330,16 @@ const AutoJobApplication = () => {
     const runNow = async () => {
         try {
             setLoading(true);
-            const token = localStorage.getItem('token');
-
-            if (!token || !currentConfigId) {
+            if (!currentConfigId) {
                 toast.error('You must have a saved configuration to run it');
                 return;
             }
-
-            const response = await axios.post(`${API_URL}/job-config/${currentConfigId}/run`, {}, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-
-            if (response.data.success) {
+            const response = await jobConfigService.runConfig(currentConfigId)
+            if (response.success) {
                 toast.success('Job execution triggered successfully');
             }
         } catch (error) {
-            toast.error('Failed to run job: ' + (error.response?.data?.message || error.message));
+            toast.error('Failed to run job: ' + (error.response?.message || error.message));
         } finally {
             setLoading(false);
         }
@@ -651,28 +606,15 @@ const AutoJobApplication = () => {
                                             console.warn("Please save your configuration first");
                                             return;
                                         }
-
                                         // Save the AI training data
-                                        const token = localStorage.getItem('token');
-                                        if (token) {
-                                            axios.post(
-                                                `${API_URL}/job-config/${currentConfigId}/ai-training`,
-                                                { selfDescription },
-                                                {
-                                                    headers: {
-                                                        Authorization: `Bearer ${token}`
-                                                    }
-                                                }
-                                            )
-                                                .then(response => {
-                                                    if (response.data.success) {
+                                          jobConfigService.saveAITraining(currentConfigId, selfDescription).then(response => {
+                                                    if (response.success) {
                                                         toast.success('AI training data saved successfully');
                                                     }
                                                 })
                                                 .catch(error => {
-                                                    toast.error('Failed to save AI training data: ' + (error.response?.data?.message || error.message));
+                                                    toast.error('Failed to save AI training data: ' + (error.response?.message || error.message));
                                                 });
-                                        }
                                     }}
                                 >
                                     <Save size={18} />

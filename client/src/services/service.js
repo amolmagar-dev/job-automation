@@ -3,7 +3,6 @@ import axios from 'axios';
 
 // Create an axios instance with default config
 const api = axios.create({
-  timeout: 10000,
   baseURL: import.meta.env.VITE_API_BASE_URL,
   headers: {
     'Content-Type': 'application/json'
