@@ -2,8 +2,8 @@
 import React, { useState } from 'react';
 import Layout from '../layout/Layout.jsx';
 import DashboardSummary from './DashboardSummary.jsx';
-import ServiceManagement from './service_management/ServiceManagement.jsx';
-import AutoJobApplication from './service_management/AutoJobApplication.jsx';
+import ServiceManagement from './services/ServiceManagement.jsx';
+import AutoJobApplication from './services/AutoJobApplication.jsx';
 // import ApplicationTracker from './components/ApplicationTracker';
 // Import other components as needed
 
