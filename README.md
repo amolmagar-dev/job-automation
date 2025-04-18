@@ -27,3 +27,6 @@
 │   │   └── sockets/      <-- Socket.io handlers
 │   └── utils/
 └── tests/
+
+User Configuration → Job Scheduler → Job Queue → Worker Manager → 
+Available Worker Container → Process Job → Store Results → Notify User

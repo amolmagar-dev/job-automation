@@ -1,0 +1,38 @@
+@import '../abstracts/variables';
+
+:root.theme-dark {
+    // Background colors
+    --background-primary: #{$background-primary};
+    --background-secondary: #{$background-secondary};
+    --background-tertiary: #{$background-tertiary};
+
+    // Text colors
+    --text-primary: #{$text-primary};
+    --text-secondary: #{$text-secondary};
+    --text-tertiary: #{$text-tertiary};
+    --text-muted: #{$text-muted};
+
+    // UI elements
+    --border-color: #{$border-color};
+    --input-background: #{$input-background};
+
+    // Brand colors
+    --primary-color: #{$primary-color};
+    --secondary-color: #{$secondary-color};
+    --success-color: #{$success-color};
+    --warning-color: #{$warning-color};
+    --error-color: #{$error-color};
+
+    // Feature specific colors
+    --smart-job-color: #{$primary-color};
+    --automated-app-color: #{$secondary-color};
+    --resume-opt-color: #{$success-color};
+    --analytics-color: #{$warning-color};
+
+    // Gradient
+    --gradient-primary: #{$gradient-primary};
+
+    // Misc
+    --shadow-color: rgba(0, 0, 0, 0.2);
+    --overlay-color: rgba(0, 0, 0, 0.8);
+}

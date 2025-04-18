@@ -1,0 +1,38 @@
+@import '../abstracts/variables';
+
+:root.theme-light {
+    // Background colors
+    --background-primary: #ffffff;
+    --background-secondary: #f9fafb;
+    --background-tertiary: #f3f4f6;
+
+    // Text colors
+    --text-primary: #1f2937;
+    --text-secondary: #4b5563;
+    --text-tertiary: #6b7280;
+    --text-muted: #9ca3af;
+
+    // UI elements
+    --border-color: #e5e7eb;
+    --input-background: #f9fafb;
+
+    // Brand colors stay the same
+    --primary-color: #{$primary-color};
+    --secondary-color: #{$secondary-color};
+    --success-color: #{$success-color};
+    --warning-color: #{$warning-color};
+    --error-color: #{$error-color};
+
+    // Feature specific colors
+    --smart-job-color: #{$primary-color};
+    --automated-app-color: #{$secondary-color};
+    --resume-opt-color: #{$success-color};
+    --analytics-color: #{$warning-color};
+
+    // Gradient
+    --gradient-primary: #{$gradient-primary};
+
+    // Misc
+    --shadow-color: rgba(0, 0, 0, 0.1);
+    --overlay-color: rgba(0, 0, 0, 0.5);
+}

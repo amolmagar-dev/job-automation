@@ -23,9 +23,8 @@ export class GeminiBot {
     return instance;
   }
 
-  static async refreshInstruction() {
-    const newInstruction = await PepareAndTrainBot(); // Force re-read from resume
-    instance = new GeminiBot(newInstruction); // Replace instance
+  static async trainBotOnSelfDescription(selfDescription) {
+    instance = new GeminiBot(selfDescription); // Replace instance
     console.log('🔁 System instruction updated and bot instance refreshed');
   }
 

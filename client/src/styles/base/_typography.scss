@@ -1,0 +1,89 @@
+// Typography styles
+h1,
+.h1 {
+    @include heading-1;
+}
+
+h2,
+.h2 {
+    @include heading-2;
+}
+
+h3,
+.h3 {
+    font-size: $font-size-lg;
+    font-weight: 600;
+    margin-bottom: $spacing-2;
+}
+
+h4,
+.h4 {
+    font-size: $font-size-base;
+    font-weight: 600;
+    margin-bottom: $spacing-2;
+}
+
+p {
+    margin-bottom: $spacing-4;
+    color: var(--text-secondary);
+}
+
+.text-sm {
+    font-size: $font-size-sm;
+}
+
+.text-xs {
+    font-size: $font-size-xs;
+}
+
+.text-lg {
+    font-size: $font-size-lg;
+}
+
+.text-xl {
+    font-size: $font-size-xl;
+}
+
+.text-2xl {
+    font-size: $font-size-2xl;
+}
+
+.text-3xl {
+    font-size: $font-size-3xl;
+}
+
+.text-primary {
+    color: var(--text-primary);
+}
+
+.text-secondary {
+    color: var(--text-secondary);
+}
+
+.text-tertiary {
+    color: var(--text-tertiary);
+}
+
+.text-muted {
+    color: var(--text-muted);
+}
+
+.text-center {
+    text-align: center;
+}
+
+.font-bold {
+    font-weight: 700;
+}
+
+.font-semibold {
+    font-weight: 600;
+}
+
+.font-medium {
+    font-weight: 500;
+}
+
+.gradient-text {
+    @include gradient-text;
+}

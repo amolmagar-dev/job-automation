@@ -1,4 +1,5 @@
 import browserInstance from '../../browser/browser.js';
+const browser = await browserInstance.getBrowser();
 import dotenv from 'dotenv';
 import {
   loginToNaukri,
@@ -11,7 +12,6 @@ import { isBotTrained } from './helper.js';
 
 dotenv.config();
 
-const browser = await browserInstance.getBrowser();
 
 // Dynamic keyword list
 const searchConfigs = [
@@ -19,9 +19,6 @@ const searchConfigs = [
 ];
 
 export async function startNaukriAutomation() {
-  let index = 0;
-
-  while (true) {
     try {
       const page = await browser.newPage();
 
@@ -39,7 +36,7 @@ export async function startNaukriAutomation() {
       }
 
       // Pick dynamic config
-      const { keyword, exp, location } = searchConfigs[index];
+      const { keyword, exp, location } = searchConfigs;
       console.log(`🔍 Searching for: ${keyword} in ${location} (Exp: ${exp} yrs)`);
 
       await searchJobs(page, keyword, exp, location);
@@ -66,15 +63,19 @@ export async function startNaukriAutomation() {
       await page.close();
 
       // Move to next config or loop back to start
-      index = (index + 1) % searchConfigs.length;
-
-      console.log('Waiting 5 minutes before next run...');
-      await new Promise(resolve => setTimeout(resolve, 1 * 60 * 1000));
-
     } catch (err) {
       console.error('Error during automation loop:', err);
     }
-  }
 }
 
-startNaukriAutomation();
+export const trainYourBot = async ({username , password}, fastify ) => { 
+  const page = await browser.newPage();
+
+  await page.setUserAgent(
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+  );
+
+  await loginToNaukri(page);
+
+  await downloadResume(page);
+}
