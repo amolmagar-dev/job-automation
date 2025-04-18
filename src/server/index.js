@@ -16,7 +16,7 @@ import jobConfigPlugin from './plugins/jobConfigPlugin.js';
 import jobConfigRoutes from './routes/jobConfigRoutes.js';
 import portalCredentialPlugin from './plugins/portalCredentialPlugin.js';
 import portalCredentialRoutes from './routes/portalCredentialRoutes.js';
-import jobRunnerPlugin from './job/jobRunner.js';
+import jobRunnerPlugin from './plugins/jobRunnerPlugin.js';
 import jobApplicationModelPlugin from './plugins/jobApplicationPlugin.js';
 import jobApplicationRoutes from './routes/jobApplicationRoutes.js';
 

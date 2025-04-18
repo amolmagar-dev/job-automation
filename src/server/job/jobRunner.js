@@ -1,5 +1,5 @@
 /**
- * Job Runner Service for Automatic Job Search
+ * Job Runner Service for Automatic Job Search (Singleton Pattern)
  * 
  * This module provides a service that manages and executes scheduled job searches
  * based on user configurations in MongoDB.
@@ -10,13 +10,46 @@ import { JobConfigModel } from '../models/JobConfigModel.js';
 import { NaukriJobAutomation } from '../services/NaukriJobAutomationService.js';
 
 class JobRunner {
+    // Private instance variable
+    static #instance = null;
+    
+    /**
+     * Get the singleton instance of JobRunner
+     * @param {Object} app - The application instance
+     * @returns {JobRunner} The singleton JobRunner instance
+     */
+    static getInstance(app) {
+        if (!JobRunner.#instance) {
+            JobRunner.#instance = new JobRunner(app);
+        }
+        
+        // Update app reference if needed
+        if (app && JobRunner.#instance.app !== app) {
+            JobRunner.#instance.app = app;
+        }
+        
+        return JobRunner.#instance;
+    }
+    
+    /**
+     * Private constructor to prevent direct instantiation
+     * @param {Object} app - The application instance
+     */
     constructor(app) {
+        // Prevent new instantiations if instance already exists
+        if (JobRunner.#instance) {
+            return JobRunner.#instance;
+        }
+        
         this.app = app;
         this.isRunning = false;
         this.scheduledJobs = new Map(); // Map to keep track of scheduled jobs
         this.mainScheduler = null;
         this.jobQueue = []; // Queue to store jobs that need to be executed
         this.isProcessingQueue = false; // Flag to track if we're currently processing the queue
+        
+        // Set the instance
+        JobRunner.#instance = this;
     }
 
     /**
@@ -104,10 +137,10 @@ class JobRunner {
             const [hours, minutes] = (time || '00:00').split(':').map(Number);
 
             switch (frequency) {
-                case 'dailsy':
+                case 'daily':
                     return `${minutes} ${hours} * * *`;
 
-                case 'weeksly':
+                case 'weekly':
                     if (!days || !Array.isArray(days) || days.length === 0) {
                         return null;
                     }
@@ -115,7 +148,7 @@ class JobRunner {
                     const weekDays = days.join(',');
                     return `${minutes} ${hours} * * ${weekDays}`;
 
-                case 'custosm':
+                case 'custom':
                     if (!days || !Array.isArray(days) || days.length === 0) {
                         return null;
                     }
@@ -262,7 +295,7 @@ class JobRunner {
             let result;
             switch (job.portal) {
                 case 'naukri':
-                    const naukriAutomation = new NaukriJobAutomation(browser, job , this.app , user , credentials);
+                    const naukriAutomation = new NaukriJobAutomation(browser, job, this.app, user, credentials);
                     result = await naukriAutomation.start();
                     break;
                 // Add cases for other portals as needed
@@ -423,62 +456,5 @@ class JobRunner {
     }
 }
 
-/**
- * Create and register the job runner service with Fastify
- * @param {FastifyInstance} fastify - Fastify instance
- * @param {Object} options - Plugin options
- */
-export default async function jobRunnerPlugin(fastify, options) {
-    // Create the job runner instance
-    const jobRunner = new JobRunner(fastify);
-
-    // Decorate Fastify with the job runner
-    fastify.decorate('jobRunner', jobRunner);
-
-    // Initialize the job runner after server starts
-    fastify.addHook('onReady', async () => {
-        await jobRunner.initialize();
-    });
-
-    // Clean up on server close
-    fastify.addHook('onClose', async (instance) => {
-        instance.jobRunner.stop();
-    });
-
-    // Register routes to manage jobs
-    fastify.put('/api/jobs/:id/schedule', async (request, reply) => {
-        const { id } = request.params;
-
-        try {
-            await jobRunner.updateJob(id);
-            return { success: true, message: 'Job scheduled successfully' };
-        } catch (error) {
-            request.log.error({ err: error }, 'Error scheduling job');
-            return reply.code(500).send({ success: false, message: 'Failed to schedule job' });
-        }
-    });
-
-    fastify.delete('/api/jobs/:id/schedule', async (request, reply) => {
-        const { id } = request.params;
-
-        try {
-            jobRunner.removeJob(id);
-            return { success: true, message: 'Job removed from scheduler' };
-        } catch (error) {
-            request.log.error({ err: error }, 'Error removing job from scheduler');
-            return reply.code(500).send({ success: false, message: 'Failed to remove job from scheduler' });
-        }
-    });
-
-    fastify.post('/api/jobs/:id/run', async (request, reply) => {
-        const { id } = request.params;
-
-        try {
-            const result = await jobRunner.runJobNow(id);
-            return result;
-        } catch (error) {
-            request.log.error({ err: error }, 'Error running job now');
-            return reply.code(500).send({ success: false, message: 'Failed to run job' });
-        }
-    });
-}
+// Export the class - consumers will use getInstance() to access the singleton
+export default JobRunner;
