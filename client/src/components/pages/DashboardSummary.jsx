@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import apiUtils from '../../../services/jobApplicationService';
+import apiUtils from '../../services/jobApplicationService';
 import {
   BarChart,
   Bar,
